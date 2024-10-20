@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editor</title>
+    <style>
+      body {
+        padding: 300px;
+        position: relative;
+      }
+      .editor-body {
+        width: 300px;
+        height: 120px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        line-height: 32px;
+        padding: 0 10px;
+      }
+      .editor {
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        outline: none; /* 移除默认焦点轮廓 */
+      }
+      .user-list {
+        position: fixed;
+        border: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="editor-body">
+      <div class="editor" contenteditable="true"></div>
+    </div>
+    <script>
+      const userList = [
+        { name: "张三", id: 1 },
+        { name: "李四", id: 2 },
+        { name: "王五", id: 3 },
+        { name: "赵六", id: 4 },
+        { name: "钱七", id: 5 },
+        { name: "孙八", id: 6 },
+        { name: "周九", id: 7 },
+        { name: "吴十", id: 8 },
+      ];
+
+      function getCursorPosition(editEl, selection) {
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+
+          const { left, top } = editEl.getBoundingClientRect();
+          const x = rect.left;
+          const y = rect.top;
+
+          // 返回坐标
+          return { x, y };
+        }
+        return null;
+      }
+
+      function hideUserList() {
+        const userListElement = document.body.querySelector("div.user-list");
+        if (userListElement) {
+          userListElement.style.display = "none";
+        }
+      }
+
+      function showUserList(editEl, selection, queryStr) {
+        const position = getCursorPosition(editEl, selection);
+        const range = selection.getRangeAt(0);
+        let userListElement = document.body.querySelector("div.user-list");
+        if (!userListElement) {
+          userListElement = document.createElement("div");
+          userListElement.setAttribute("class", "user-list");
+          document.body.appendChild(userListElement);
+        }
+        userListElement.innerHTML = "";
+        userListElement.style.display = "block";
+        userListElement.style.zIndex = 9999;
+        userListElement.style.background = "#fff";
+        userListElement.style.left = `${position.x}px`;
+        userListElement.style.top = `${position.y + 20}px`;
+        userList.forEach((user) => {
+          if (queryStr && !user.name.includes(queryStr)) {
+            return;
+          }
+          const userElement = document.createElement("p");
+          userElement.innerText = user.name;
+          userListElement.appendChild(userElement);
+          userElement.onclick = function () {
+            // 创建一个span元素来表示用户
+            const spanElement = document.createElement("span");
+            spanElement.setAttribute("data-id", user.id);
+            spanElement.setAttribute("class", "mention");
+            spanElement.setAttribute("contenteditable", false);
+            spanElement.innerHTML = `&nbsp;@${user.name}&nbsp;`;
+            spanElement.style.color = "red";
+            spanElement.style.cursor = "pointer";
+
+            range.setStart(
+              range.endContainer,
+              range.endOffset - (queryStr.length + 1)
+            );
+            range.setEnd(range.endContainer, range.endOffset);
+            range.deleteContents();
+            // 将span元素插入到光标位置
+            range.insertNode(spanElement);
+            userListElement.style.display = "none";
+            if (!selection) return;
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          };
+        });
+      }
+
+      const editor = document.querySelector(".editor");
+
+      editor.oninput = function (event) {
+        const selection = window.getSelection();
+        if (!selection.anchorNode.textContent) return;
+        const text = selection.anchorNode.textContent.slice(
+          0,
+          selection.anchorOffset
+        );
+        // 获取光标
+        if (!/\@[^\s\@]*$/.test(text)) return hideUserList();
+        const t = /\@[^\s\@]*$/.exec(text);
+        if (!t) return hideUserList();
+        const query = t[0].slice(1);
+        showUserList(editor, selection, query);
+      };
+    </script>
+  </body>
+</html>

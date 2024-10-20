@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>observe</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        color: red;
+        font-size: 24px;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>TEST-1</h1>
+    <h1>TEST-2</h1>
+    <h1>TEST-3</h1>
+    <h1>TEST-4</h1>
+    <h1>TEST-5</h1>
+    <button id="demo-button">被监听的按钮</button>
+    <h1>TEST-6</h1>
+    <h1>TEST-7</h1>
+    <h1>TEST-8</h1>
+    <h1>TEST-9</h1>
+    <h1>TEST-10</h1>
+    <h1>TEST-11</h1>
+    <h1>TEST-12</h1>
+    <h1>TEST-13</h1>
+    <h1>TEST-14</h1>
+    <h1>TEST-15</h1>
+    <h1>TEST-16</h1>
+    <h1>TEST-17</h1>
+    <h1>TEST-18</h1>
+    <h1>TEST-19</h1>
+    <h1>TEST-20</h1>
+    <h1>TEST-21</h1>
+    <h1>TEST-22</h1>
+    <h1>TEST-23</h1>
+    <h1>TEST-24</h1>
+    <h1>TEST-25</h1>
+    <h1>TEST-26</h1>
+    <h1>TEST-27</h1>
+    <h1>TEST-28</h1>
+    <h1>TEST-29</h1>
+  </body>
+  <script>
+    const btn = document.getElementById("demo-button");
+    let width = 100;
+    btn.onclick = function () {
+      width += 10;
+      btn.style.width = width + "px";
+    };
+    // 创建一个MutationObserver实例
+    const observer = new MutationObserver((mutationsList, observer) => {
+      console.log("DOM变化了！");
+    });
+
+    // 配置观察选项
+    const config = {
+      attributes: true, // 观察属性变化
+      childList: true, // 观察子节点变化
+      subtree: true, // 观察所有后代节点变化
+    };
+
+    // 开始观察目标节点
+    observer.observe(btn, config);
+
+    // 停止观察
+    // observer.disconnect();
+
+    // 配置观察选项,观察是否在视窗边界上
+    const config2 = {
+      root: null, // 观察的根元素
+      rootMargin: "-100px 0px 0px 0px", // 根元素的边界
+      threshold: 1, // 元素可见比例阈值
+    };
+    // 创建一个IntersectionObserver实例
+    const observer2 = new IntersectionObserver((entries, observer) => {
+      console.log("元素可见性变化了！");
+    }, config2);
+
+    // 开始观察目标节点
+    observer2.observe(btn);
+
+    // 停止观察
+    // observer2.disconnect();
+  </script>
+</html>

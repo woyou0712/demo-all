@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="作为一名热衷于创造美观且实用界面的前端开发者，我致力于将设计与技术完美结合。在这个页面上，您将看到我过去的一些项目案例，它们展示了我在Web开发方面的技能和经验。每个项目都体现了我对细节的关注和对用户友好体验的承诺。请通过侧边栏浏览我的作品，并随时联系我了解更多信息。"
+    />
+    <meta
+      name="keywords"
+      content="前端开发, Web设计, JavaScript, CSS, HTML, UI设计, 用户体验, 响应式设计, 个人作品集, 项目案例"
+    />
+    <meta name="author" content="朝歌有妖" />
+    <title>启梦网络工作室</title>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./h5style.css" />
+  </head>
+  <body>
+    <a class="git-hub" href="https://github.com/woyou0712" target="_blank">
+      <img src="./image/github.png" alt="" />
+    </a>
+    <div class="header">
+      <p class="header-title">欢迎来到我的前端世界</p>
+      <p class="header-text">探索我的作品和工具</p>
+      <div class="start-button">开始探索</div>
+    </div>
+    <section class="section">
+      <div class="data-list">
+        <a href="http://mention.bauble.vip" target="_blank" class="data-item">
+          <div class="item-title">
+            <img src="./image/mention.png" alt="" class="icon" />
+            Mention 聊天框插件
+          </div>
+          <div class="item-desc">
+            <div class="desc-row">纯JS插件，适用于任何框架以及原生HTML</div>
+            <div class="desc-row">无第三方依赖，轻装上阵</div>
+          </div>
+        </a>
+        <a
+          href="https://ohpm.openharmony.cn/#/cn/detail/hi-signature"
+          target="_blank"
+          class="data-item"
+        >
+          <div class="item-title">
+            <img src="./image/sign.png" alt="" class="icon" />
+            Signature 鸿蒙手写签名
+          </div>
+          <div class="item-desc">
+            <div class="desc-row">提供流畅自然的书写体验</div>
+            <div class="desc-row">适用于各类应用中的签名采集场景</div>
+          </div>
+        </a>
+        <a href="http://bills.bauble.vip" target="_blank" class="data-item">
+          <div class="item-title">
+            <img src="./image/bills.png" alt="" class="icon" />
+            Bills 自定义票据
+          </div>
+          <div class="item-desc">
+            <div class="desc-row">
+              自定义票据插件允许用户灵活设计与编辑各种票据格式
+            </div>
+            <div class="desc-row">完美融入现代财务管理系统</div>
+          </div>
+        </a>
+        <a href="http://form.bauble.vip" target="_blank" class="data-item">
+          <div class="item-title">
+            <img src="./image/form.png" alt="" class="icon" />
+            Form Build 表单构建器
+          </div>
+          <div class="item-desc">
+            <div class="desc-row">提供直观拖放界面</div>
+            <div class="desc-row">助力快速定制复杂表单</div>
+          </div>
+        </a>
+      </div>
+      <div class="skills">
+        <a href="http://demo.bauble.vip" target="_blank" class="skill-tag">
+          Windows弹窗
+        </a>
+        <a
+          href="https://www.npmjs.com/package/color2rgba"
+          target="_blank"
+          class="skill-tag"
+        >
+          Color2rgba
+        </a>
+        <a href="http://winplus.bauble.vip" target="_blank" class="skill-tag">
+          Windows10
+        </a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-qq">
+          <a href="https://qm.qq.com/q/LqSPY7LrGM" target="_blank">
+            点击链接加入群聊【小妖非人类研究中心—前端】
+          </a>
+        </div>
+        <div class="qrcode">
+          <img src="./image/qrcode.png" alt="" />
+        </div>
+        <!-- ICP备案/许可证号 -->
+        <span>启梦网络工作室</span>
+        <a href="https://beian.miit.gov.cn/" target="_blank">
+          冀ICP备2020029525号-2
+        </a>
+      </div>
+    </footer>
+    <script>
+      let isStart = false;
+      const start = () => {
+        if (isStart) return;
+        isStart = true;
+        const vh = window.innerHeight;
+        const s = vh / 50;
+        let t = document.documentElement.scrollTop;
+        let time = setInterval(() => {
+          t += s;
+          if (t > vh) {
+            t = vh;
+          }
+          document.documentElement.scrollTop = t;
+          if (t === vh) {
+            clearInterval(time);
+            isStart = false;
+          }
+        });
+      };
+      document.querySelector(".start-button").addEventListener("click", start);
+      setTimeout(start, 2000);
+    </script>
+  </body>
+</html>

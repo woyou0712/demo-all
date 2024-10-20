@@ -1,0 +1,21 @@
+div.hi-voucher-switch {
+  display: inline-block;
+  position: relative;
+  background-color: var(--default-bg);
+  transition: 300ms;
+  padding: 2px;
+
+  .hi-voucher-switch-btn {
+    border-radius: 50%;
+    transition: 300ms;
+  }
+
+  &.active {
+    background-color: var(--active-bg);
+
+    .hi-voucher-switch-btn {
+      transform: translateX(var(--translate-x));
+    }
+  }
+
+}

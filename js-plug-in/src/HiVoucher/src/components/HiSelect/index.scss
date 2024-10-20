@@ -1,0 +1,70 @@
+div.hi-voucher-select {
+  width: 100%;
+  height: 32px;
+  position: relative;
+  font-size: 14px;
+
+  div.hi-select-input {
+    width: 100%;
+    height: 100%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+
+    span.hi-select-input-value {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  div.hi-select-options {
+    position: absolute;
+    width: 100%;
+    z-index: 999;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    max-height: 200px;
+    overflow-y: auto;
+    top: 100%; // position relative to the parent
+    display: none;
+    font-size: 14px;
+
+    div.hi-select-option-item {
+      width: 100%;
+      height: 28px;
+      line-height: 28px;
+      padding: 0 8px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #f0f0f0;
+      }
+
+      &.active {
+        background-color: #f0f0f0;
+      }
+
+      &+.hi-select-option-item {
+        margin-top: 5px;
+      }
+    }
+
+    // 滚动条样式
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 4px;
+      background-color: #ccc;
+    }
+  }
+}

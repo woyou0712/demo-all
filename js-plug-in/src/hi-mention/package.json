@@ -1,0 +1,24 @@
+{
+  "name": "hi-mention",
+  "version": "1.1.1",
+  "main": "index",
+  "types": "index.d.ts",
+  "keywords": [
+    "聊天框",
+    "聊天输入框",
+    "聊天",
+    "提及",
+    "@功能",
+    "@输入框",
+    "@提及",
+    "@提及输入框",
+    "mention",
+    "mentions",
+    "mention-input",
+    "class",
+    "chat"
+  ],
+  "author": "monster",
+  "license": "ISC",
+  "description": "纯JS聊天框，兼容原生HTML/React/Vue等各种框架；支持@提及功能、插入富文本等多功能编辑器；内置H5和PC的交互样式"
+}

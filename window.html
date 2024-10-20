@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>window</title>
+    <style>
+      img,
+      video {
+        width: 375px;
+        height: 250px;
+        background-color: #f5f5f5;
+      }
+    </style>
+  </head>
+  <body>
+    <video id="camera"></video>
+    <button id="openCamera">打开摄像头</button>
+    <script>
+      document.getElementById("openCamera").onclick = () => {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then((stream) => {
+              var video = document.getElementById("camera");
+              video.srcObject = stream;
+
+              video.onloadedmetadata = (e) => {
+                video.play();
+              };
+            })
+            .catch((err) => {
+              console.log("An error occurred: " + err);
+            });
+        } else {
+          alert("该浏览器不支持");
+        }
+      };
+    </script>
+    <br />
+    <video id="desktop"></video>
+    <button id="openDesktop">分享桌面</button>
+    <button id="startDesktop">开始录像</button>
+    <button id="stopDesktop">停止录像</button>
+    <script>
+      let mediaRecorder = null;
+      document.getElementById("openDesktop").onclick = () => {
+        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+          /**
+           * getDisplayMedia 的 mediaSource 对象可以包含 sourceType 属性，用于指定要捕获的内容类型。可选值包括：
+           * "screen"：捕获整个屏幕的内容。
+           * "window"：捕获单个应用窗口的内容。
+           * "tab"：捕获单个浏览器标签页的内容。
+           * */
+          const sourceType = "screen";
+          const options = {
+            video: {
+              cursor: "always", // 始终显示光标
+              displaySurface: "monitor", // 指定要捕获的显示表面。可选值为 'monitor'(捕获显示器上的内容) 或 'browser'(捕获浏览器窗口的内容)
+              logical: false, // 不使用逻辑显示器
+              mediaSource: {
+                sourceType, // 捕获整个屏幕
+              },
+            },
+          };
+          navigator.mediaDevices
+            .getDisplayMedia(options)
+            .then((stream) => {
+              mediaRecorder = new MediaRecorder(stream);
+              var video = document.getElementById("desktop");
+              video.srcObject = stream;
+              video.onloadedmetadata = (e) => {
+                video.play();
+              };
+            })
+            .catch((err) => {
+              console.log("An error occurred: " + err);
+            });
+        } else {
+          alert("该浏览器不支持");
+        }
+      };
+
+      const chunks = [];
+      document.getElementById("startDesktop").onclick = () => {
+        mediaRecorder.start();
+        mediaRecorder.addEventListener("dataavailable", (event) => {
+          chunks.push(event.data);
+        });
+      };
+      document.getElementById("stopDesktop").onclick = () => {
+        mediaRecorder.stop();
+        mediaRecorder.addEventListener("stop", () => {
+          const blob = new Blob(chunks, { type: "video/mp4" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.style.display = "none";
+          a.href = url;
+          a.download = "video.mp4";
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+        });
+      };
+    </script>
+  </body>
+</html>

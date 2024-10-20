@@ -1,0 +1,11 @@
+input.hi-voucher-input {
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &::placeholder {
+    color: #999;
+  }
+}

@@ -1,0 +1,8 @@
+qq_robot/node_modules/
+qq_robot/.idea/
+qq_robot/botpy.log
+*.pyc
+jx3_script/.idea/
+jx3_script/maps/
+jx3_script/screenshot.png
+stellar-cli/node_modules/

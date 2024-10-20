@@ -1,0 +1,114 @@
+section.hi-voucher-attribute {
+  position: absolute;
+  width: 340px;
+  height: 100%;
+  right: 0;
+  top: 0;
+  transform: translateX(300px);
+  background: #fff;
+  z-index: 999;
+  transition: all 0.3s ease-in-out;
+  box-shadow: -2px 0px 6px rgba(0, 0, 0, 0.1);
+  padding: 40px 20px 20px 20px;
+  transition: 300ms;
+  overflow-y: auto;
+
+  .hi-voucher-attribute-open {
+    width: 40px;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid transparent;
+    transition: 300ms;
+
+
+    .hi-voucher-attribute-open-icon {
+      width: 40px;
+      height: 40px;
+      padding: 10px;
+      transform: rotate(180deg);
+      color: #999;
+      cursor: pointer;
+
+      &:hover {
+        color: #666;
+        background-color: #f5f5ff;
+      }
+    }
+
+    &:hover {
+      background-color: #f9f9ff;
+    }
+  }
+
+  &.active {
+    transform: translateX(0);
+
+    .hi-voucher-attribute-open {
+      width: 100%;
+      height: 40px;
+      border-color: #eef;
+
+      .hi-voucher-attribute-open-icon {
+        transform: rotate(0);
+
+      }
+    }
+  }
+
+  .hi-voucher-attribute-title {
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+    vertical-align: middle;
+    line-height: 16px;
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background-color: #09f;
+      margin-right: 8px;
+    }
+  }
+
+  .hi-voucher-attribute-form-body {
+    width: 100%;
+
+    .hi-voucher-attribute-form {
+      width: 100%;
+
+      .hi-voucher-attribute-form-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        .hi-voucher-attribute-form-item-left {
+          width: 80px;
+          text-align: justify;
+          overflow: hidden;
+          padding-right: 10px;
+          text-align: right;
+        }
+
+        .hi-voucher-attribute-form-item-right {
+          width: calc(100% - 80px);
+        }
+
+        &+.hi-voucher-attribute-form-item {
+          margin-top: 12px;
+        }
+      }
+    }
+  }
+}
