@@ -10,8 +10,30 @@ export class Toolbar {
   private _moveEl = createElement('div', { className: 'hi-voucher-toolbar-item', content: moveIcon });
   private _copyEl = createElement('div', { className: 'hi-voucher-toolbar-item', content: copyIcon });
 
-  public methodType: "select" | "move" | "copy" = 'select';
+  private _methodType: "select" | "move" | "copy" = 'select';
+  get methodType() {
+    return this._methodType;
+  }
 
+  set methodType(type: "select" | "move" | "copy") {
+    this._methodType = type;
+    this._selectEl.classList.remove('active')
+    this._moveEl.classList.remove('active')
+    this._copyEl.classList.remove('active')
+    switch (type) {
+      case "select":
+        this._selectEl.classList.add('active')
+        break;
+      case "move":
+        this._moveEl.classList.add('active')
+        break;
+      case "copy":
+        this._copyEl.classList.add('active')
+        break;
+    }
+    this.methodchanges.forEach((fn) => fn(type))
+  }
+  private methodchanges: ((type: "select" | "move" | "copy") => void)[] = []
 
   private _inputEl = createElement('div', { className: 'hi-voucher-toolbar-item', content: inputIcon });
   private _textEl = createElement('div', { className: 'hi-voucher-toolbar-item', content: textIcon });
@@ -58,21 +80,12 @@ export class Toolbar {
   private onEvent() {
     this._selectEl.addEventListener('click', () => {
       this.methodType = 'select';
-      this._selectEl.classList.add('active');
-      this._moveEl.classList.remove('active');
-      this._copyEl.classList.remove('active');
     })
     this._moveEl.addEventListener('click', () => {
       this.methodType = 'move';
-      this._selectEl.classList.remove('active');
-      this._moveEl.classList.add('active');
-      this._copyEl.classList.remove('active');
     })
     this._copyEl.addEventListener('click', () => {
       this.methodType = 'copy';
-      this._selectEl.classList.remove('active');
-      this._moveEl.classList.remove('active');
-      this._copyEl.classList.add('active');
     })
 
     this._inputEl.addEventListener('click', () => {
@@ -100,6 +113,10 @@ export class Toolbar {
 
   public onCreateNode(fn: (type: "input" | "table" | "text") => void) {
     this.createnodes.push(fn)
+  }
+
+  public onMethodChange(fn: (type: "select" | "move" | "copy") => void) {
+    this.methodchanges.push(fn)
   }
 
 }

@@ -11,7 +11,6 @@ type VoucherInputType = "text" | "number" | "date" | "year" | "month" | "day" | 
  * 输入元素属性（包括输入框，选择框等等可输入的元素）
  */
 interface VoucherInputTemplate {
-  key: string; //输入框唯一标识
   type: VoucherInputType; // 输入框类型
   mark: string; // 标记
   name: string; // 输入框名称
@@ -35,7 +34,6 @@ interface VoucherInputTemplate {
  * 表格元素数据结构
  */
 interface VoucherTableTemplate {
-  key: string; // 表格唯一标识
   name: string; // 表格名称
   width: number; // 表格宽度
   height: number; // 表格高度
@@ -57,7 +55,6 @@ interface VoucherTableTemplate {
  * 文本元素数据结构
  */
 interface VoucherTextTemplate {
-  key: string; // 文本唯一标识
   name: string; // 文本名称
   content: string; // 文本内容
   fontFamily: string; // 字体

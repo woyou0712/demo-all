@@ -1,9 +1,11 @@
-import { voucherOptionDefault, inputOptionDefault, tableOptionDefault, textOptionDefault, createElement } from "../../../utils";
+import { voucherTemplateData, inputTemplateData, tableTemplateData, textTemplateData, createElement } from "../../../utils";
 import { openIcon } from "../../../static/icons";
 import { HiInput, HiSwitch, HiSelect, HiUpload } from "../../components";
 import { FormItemOption, inputOptionForm, tableOptionForm, textOptionForm, voucherOptionForm } from "./const";
 
-export type ChangeCallback = <T extends keyof AttributeOptions, K extends keyof AttributeOptions[T]>(type: T, key: K, value: AttributeOptions[T][K]) => void
+export interface AttributeFormOptions { type: VoucherAttributeKeys; nodeKey: null | string; nodeAttributes: AttributeOptions }
+
+export type ChangeCallback = <T extends keyof AttributeOptions, K extends keyof AttributeOptions[T]>(type: T, nodeKey: null | string, name: K, value: AttributeOptions[T][K]) => void
 
 export default class Attribute {
   private _rootEl: HTMLElement;
@@ -31,30 +33,24 @@ export default class Attribute {
       this._bodyEl.classList.remove("active");
     }
   }
-  // 当前属性类型 整体票据/输入框/表格
-  private _type: VoucherAttributeKeys = "voucher";
 
-  get type() {
-    return this._type;
+  private _formOptions: AttributeFormOptions = {
+    type: "voucher", // 当前元素类型
+    nodeKey: null, // 当前选中的节点key
+    // 节点属性(根据type展示不同的属性)
+    nodeAttributes: {
+      "voucher": voucherTemplateData(),
+      "input": inputTemplateData(),
+      "table": tableTemplateData(),
+      "text": textTemplateData()
+    }
   }
-
-  set type(type: VoucherAttributeKeys) {
-    this._type = type;
+  get formOptions() {
+    return this._formOptions;
   }
-
-  private _options: AttributeOptions = {
-    "voucher": voucherOptionDefault(),
-    "input": inputOptionDefault(),
-    "table": tableOptionDefault(),
-    "text": textOptionDefault()
-  };
-
-  get options() {
-    return this._options;
-  }
-
-  set options(options: AttributeOptions) {
-    this._options = options;
+  set formOptions(formOptions: AttributeFormOptions) {
+    this._formOptions = formOptions;
+    this._showForm();
   }
 
   private changes: ChangeCallback[] = [];
@@ -103,7 +99,7 @@ export default class Attribute {
     // 更具type的值来创建对应的表单项
     let forms: FormItemOption<string>[] = [];
     let box: HTMLElement
-    let data = this._options[type];
+    let data = this.formOptions.nodeAttributes[type];
     if (type === "input") {
       forms = inputOptionForm;
       box = this._inputFormEl;
@@ -117,6 +113,7 @@ export default class Attribute {
       forms = voucherOptionForm;
       box = this._voucherFormEl;
     }
+    const nodeKey = this.formOptions.nodeKey;
     const parentNode = document.createDocumentFragment();
     forms.forEach((item) => {
       const el = createElement("div", { className: "hi-voucher-attribute-form-item" });
@@ -144,25 +141,25 @@ export default class Attribute {
       if (ipt) {
         item.element = ipt;
         const option = data as any
-        ipt.value = option[item.key];
+        ipt.value = option[item.name];
         ipt.onChange((v) => {
-          option[item.key] = v;
-          if (item.key === "bg" && v) {
+          option[item.name] = v;
+          if (item.name === "bg" && v) {
             option["bgUrl"] = v ? (v instanceof File ? URL.createObjectURL(v) : v) : ''
-            const bgUrlFormItem = forms.find(m => m.key === "bgUrl")
+            const bgUrlFormItem = forms.find(m => m.name === "bgUrl")
             if (bgUrlFormItem) {
               bgUrlFormItem.element.value = option["bgUrl"]
             }
-            this.changes.forEach(fn => fn(type, "bgUrl" as any, v));
-          } else if (item.key === "bgUrl" && v) {
+            this.changes.forEach(fn => fn(type, nodeKey, "bgUrl" as any, v));
+          } else if (item.name === "bgUrl" && v) {
             option["bg"] = v
-            const bgFormItem = forms.find(m => m.key === "bg")
+            const bgFormItem = forms.find(m => m.name === "bg")
             if (bgFormItem) {
               bgFormItem.element.value = v
             }
-            this.changes.forEach(fn => fn(type, "bg" as any, v));
+            this.changes.forEach(fn => fn(type, nodeKey, "bg" as any, v));
           }
-          this.changes.forEach(fn => fn(type, item.key as any, v));
+          this.changes.forEach(fn => fn(type, nodeKey, item.name as any, v));
         });
         right.appendChild(ipt.element);
       }
@@ -174,7 +171,7 @@ export default class Attribute {
 
   private _showForm() {
     this._formEl.innerHTML = "";
-    switch (this.type) {
+    switch (this._formOptions.type) {
       case "input":
         this._titleEl.innerHTML = "输入框";
         this._formEl.appendChild(this._inputFormEl);
@@ -194,8 +191,8 @@ export default class Attribute {
   }
 
   setOptions<T extends keyof AttributeOptions>(type: T, attribute?: AttributeOptions[T]) {
-    this.type = type;
-    if (attribute) this.options[type] = attribute;
+    this.formOptions.type = type;
+    if (attribute) this.formOptions.nodeAttributes[type] = attribute;
     this._showForm();
   }
 

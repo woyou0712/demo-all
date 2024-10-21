@@ -22,9 +22,11 @@ export const createUUID = (): string => {
 }
 
 
-export const voucherOptionDefault = (): VoucherTemplate => ({
-  bg: "http://bills.bauble.vip/billBg/demo.png", // 背景图片
-  bgUrl: "http://bills.bauble.vip/billBg/demo.png", // 背景图片url
+export const voucherTemplateData = (): VoucherTemplate => ({
+  // bg: "http://bills.bauble.vip/billBg/demo.png", // 背景图片
+  // bgUrl: "http://bills.bauble.vip/billBg/demo.png", // 背景图片url
+  bg: "",
+  bgUrl: "", // 背景图片url
   type: 0, // 单据类型
   name: "", // 单据名称
   width: 820, // 单据宽度
@@ -36,12 +38,12 @@ export const voucherOptionDefault = (): VoucherTemplate => ({
   sign: false, // 是否可签字
   // 单据内容
   content: {
-    inputs: [inputOptionDefault()], // 输入框
+    texts: [textTemplateData()], // 文字
+    inputs: [inputTemplateData()], // 输入框
   }
 })
 
-export const inputOptionDefault = (): VoucherInputTemplate => ({
-  key: createUUID(),
+export const inputTemplateData = (): VoucherInputTemplate => ({
   type: "text", // 输入框类型
   mark: "", // 标记
   name: "", // 输入框名称
@@ -61,8 +63,7 @@ export const inputOptionDefault = (): VoucherInputTemplate => ({
   placeholder: "" // 占位符
 })
 
-export const tableOptionDefault = (): VoucherTableTemplate => ({
-  key: createUUID(),
+export const tableTemplateData = (): VoucherTableTemplate => ({
   name: "", // 表格名称
   width: 600, // 表格宽度
   height: 96, // 表格高度
@@ -72,17 +73,16 @@ export const tableOptionDefault = (): VoucherTableTemplate => ({
   y: 0, // 表格y坐标
   // 表格内容
   content: [
-    [inputOptionDefault(), inputOptionDefault(), inputOptionDefault()],
-    [inputOptionDefault(), inputOptionDefault(), inputOptionDefault()],
-    [inputOptionDefault(), inputOptionDefault(), inputOptionDefault()],
+    [inputTemplateData(), inputTemplateData(), inputTemplateData()],
+    [inputTemplateData(), inputTemplateData(), inputTemplateData()],
+    [inputTemplateData(), inputTemplateData(), inputTemplateData()],
   ],
   colWidths: [100, 100, 100], // 列宽
   colAligns: ["left", "left", "left"], // 列对齐方式
   rowHeights: [32, 32, 32], // 行高
 })
 
-export const textOptionDefault = (): VoucherTextTemplate => ({
-  key: createUUID(),
+export const textTemplateData = (): VoucherTextTemplate => ({
   name: "", // 文本名称
   fontFamily: "'Microsoft YaHei', '微软雅黑', 'Apple SD Gothic Neo', 'Arial', sans-serif;", // 字体
   fontSize: 14, // 字体大小

@@ -16,16 +16,16 @@ export class Voucher {
 
   protected _type: VoucherAttributeKeys = "voucher";
 
-  protected _template: VoucherTemplate
+  protected _templateData: VoucherTemplate
 
-  public get template() {
-    return this._template;
+  public get templateData() {
+    return this._templateData;
   }
-  public set template(template: VoucherTemplate) {
-    this._template = template;
+  public set templateData(templateData: VoucherTemplate) {
+    this._templateData = templateData;
   }
 
-  constructor(el: Element | string, template: VoucherTemplate) {
+  constructor(el: Element | string, templateData: VoucherTemplate) {
     if (!el) {
       throw new Error("el is not found");
     }
@@ -40,13 +40,13 @@ export class Voucher {
     }
     this._rootEl.classList.add("hi-voucher");
     this._rootEl.setAttribute("style", `position: relative; overflow: hidden; min-width:800px; min-height:600px`)
-    this._template = template;
+    this._templateData = templateData;
 
     this._renderVoucher()
   }
 
   protected _renderVoucher() {
-    const { bg, width, height } = this.template
+    const { bg, width, height } = this.templateData
     if (bg) this._voucherEl.style.backgroundImage = `url(${bg})`;
     this._voucherEl.style.width = `${width}px`;
     this._voucherEl.style.height = `${height}px`;

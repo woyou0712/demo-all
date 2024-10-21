@@ -1,9 +1,9 @@
 import { createElement, createUUID } from "../../../../utils";
+import BaseNode from "./BaseNode";
 
-export default class TextBuild {
-  element = createElement("span", { style: { position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" } });
+export default class TextBuild extends BaseNode {
+  element = createElement("div", { style: { position: "absolute", minWidth: "20px", minHeight: "16px", borderWidth: "1px", borderStyle: "solid", borderColor: "transparent" } });
 
-  private _key: string;
   private _name: string;
   private _content: string;
   private _fontFamily: string;
@@ -15,8 +15,8 @@ export default class TextBuild {
   private _lineHeight: number;
 
 
-  constructor({ key, name, content, fontFamily, fontSize, bold, x, y, letterSpacing, lineHeight }: VoucherTextTemplate) {
-    this._key = key;
+  constructor({ name, content, fontFamily, fontSize, bold, x, y, letterSpacing, lineHeight }: VoucherTextTemplate) {
+    super();
     this._name = name;
     this._content = content;
     this._fontFamily = fontFamily;
@@ -40,25 +40,22 @@ export default class TextBuild {
     this.element.style.lineHeight = `${this._lineHeight}px`;
     this.element.style.left = `${this._x}px`;
     this.element.style.top = `${this._y}px`;
-    return this.element;
   }
 
-  public updateOptions({ name, content, fontFamily, fontSize, bold, x, y, letterSpacing, lineHeight }: VoucherTextTemplate) {
-    this._name = name;
-    this._content = content;
-    this._fontFamily = fontFamily;
-    this._fontSize = fontSize;
-    this._bold = bold;
-    this._x = x;
-    this._y = y;
-    this._letterSpacing = letterSpacing;
-    this._lineHeight = lineHeight;
-    this.render();
+  public update({ name, content, fontFamily, fontSize, bold, x, y, letterSpacing, lineHeight }: Partial<VoucherTextTemplate>) {
+    if (name !== undefined) { this._name = name; }
+    if (content !== undefined) { this._content = content; this.element.innerHTML = content; }
+    if (fontFamily !== undefined) { this._fontFamily = fontFamily; this.element.style.fontFamily = fontFamily; }
+    if (fontSize !== undefined) { this._fontSize = fontSize; this.element.style.fontSize = `${fontSize}px`; }
+    if (bold !== undefined) { this._bold = bold; this.element.style.fontWeight = bold ? "bold" : "normal"; }
+    if (x !== undefined) { this._x = x; this.element.style.left = `${x}px`; }
+    if (y !== undefined) { this._y = y; this.element.style.top = `${y}px`; }
+    if (letterSpacing !== undefined) { this._letterSpacing = letterSpacing; this.element.style.letterSpacing = `${letterSpacing}px`; }
+    if (lineHeight !== undefined) { this._lineHeight = lineHeight; this.element.style.lineHeight = `${lineHeight}px`; }
   }
 
-  public getOptions(): VoucherTextTemplate {
+  public options(): VoucherTextTemplate {
     return {
-      key: this._key,
       name: this._name,
       content: this._content,
       fontFamily: this._fontFamily,
