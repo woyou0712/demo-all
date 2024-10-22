@@ -49,6 +49,8 @@ interface OnEvents {
   "mention-users": ((user?: UserInfo) => void)[];
 }
 
+// 编辑器类名
+const EDITOR_CLASS = "hi-mention-editor";
 // p标签类名
 const P_TAG_CLASS = "hi-mention-row";
 // 空的输入框
@@ -134,7 +136,7 @@ class Mention {
     body.classList.add("hi-mention-body");
 
     const editor = this._editorEl;
-    editor.classList.add("hi-mention-editor");
+    editor.classList.add(EDITOR_CLASS);
     editor.setAttribute("contenteditable", "true");
     editor.innerHTML = EMPTY_INPUT
 
@@ -175,6 +177,29 @@ class Mention {
     this._events["focuses"].forEach((fn) => fn(e));
   }
 
+  /**
+   * 判断光标是否在当前行的末尾
+   */
+  private _isCursorAtEnd(range: Range, currentP: HTMLElement) {
+    // 判断光标是否在当前P元素末尾
+    let isEnd = false
+    // 获取当前P标签中的最后一个标签
+    const lastChild = currentP.lastChild as HTMLElement;
+    console.log(currentP.childNodes)
+    // 如果是当前光标所在的标签(文本标签),则判断是否在末尾
+    if (lastChild?.textContent && lastChild === range.endContainer && range.endOffset === lastChild.textContent.length) {
+      isEnd = true
+    }
+    // 如果是当前光标所在的标签(非文本标签),则判断是否在末尾
+    if (!lastChild?.textContent && (currentP.childNodes.length === range.endOffset || currentP.childNodes.length - 1 === range.endOffset)) {
+      isEnd = true
+    }
+    return isEnd
+  }
+
+  /**
+   * 内容换行
+   */
   private _wordWrap() {
     // 获取当前光标位置
     const selection = this._getSelection();
@@ -185,12 +210,34 @@ class Mention {
     // 获取当前所在的p标签
     let currentP = range.commonAncestorContainer as HTMLElement;
     // 向上查找，直到找到p标签(用for循环防止死循环)
-    for (let i = 0; currentP && currentP.nodeName !== "P" && currentP.className !== P_TAG_CLASS && i < 10; i++) {
+    for (let i = 0; currentP && currentP.nodeName !== "P" && currentP.className !== P_TAG_CLASS && !currentP.className?.includes(EDITOR_CLASS) && i < 10; i++) {
       currentP = currentP.parentElement as HTMLElement;
     }
+    console.log(currentP)
     // 创建一个换行的P标签
     const p = document.createElement("p");
-    p.className = P_TAG_CLASS
+    p.className = P_TAG_CLASS;
+    // 如果光标所在标签为编辑器根标签，则直接在编辑器标签中插入换行
+    if (currentP.className.includes(EDITOR_CLASS)) {
+      p.innerHTML = "<br/>1"
+      // 在光标位置插入新创建的p标签
+      range.insertNode(p);
+      // 将光标设置到新创建的p标签中
+      range.setStart(p, 0);
+      range.setEnd(p, 0);
+      return
+    }
+    // 如果光标在当前行末尾
+    if (this._isCursorAtEnd(range, currentP)) {
+      p.innerHTML = "<br/>"
+      // 将p标签插入到当前P标签之后
+      currentP?.insertAdjacentElement("afterend", p);
+      // 将光标设置到新创建的p标签中
+      range.setStart(p, 0);
+      range.setEnd(p, 0);
+      return
+    }
+
     // 将光标设置到当前所在P标签中并选中光标之前的内容
     range.setStart(currentP, 0);
     range.setEnd(range.endContainer, range.endOffset);
@@ -211,25 +258,126 @@ class Mention {
     range.setEnd(currentP, 0);
   }
 
+  /**
+   * 删除键
+   * @param range 当前光标位置
+   * @param currentP 当前光标所在的P标签
+   * @returns 
+   */
+  private _onDelete(range: Range, currentP: HTMLElement) {
+    // 如果光标在末尾，并且是最后一个P标签，不执行操作
+    const isEnd = this._isCursorAtEnd(range, currentP)
+    console.log(isEnd)
+    return true
+  }
+
+  /**
+   * 退格键
+   * @param range 当前光标位置
+   * @param currentP 当前光标所在的P标签
+   * @returns 
+   */
+  private _onBackspace(range: Range, currentP: HTMLElement) {
+    // 文本内容使用默认行为
+    if (range.commonAncestorContainer.nodeName === "#text") {
+      return false
+    }
+    // 如果光标在开头，并且是第一个P标签，不执行操作
+    if (range.startOffset === 0 && !currentP.previousElementSibling) {
+      return true;
+    }
+    // 如果光标在当前P标签的开头，并且当前P标签不是第一个P标签，
+    if (range.startOffset === 0 && currentP.previousElementSibling) {
+      // 如果当前标签是空标签，则删除该标签
+      if (!currentP.innerText || currentP.innerText === "\n") {
+        currentP.remove();
+        return true;
+      }
+      // 否则将当前P标签内容写入span标签中，并追加到上一个P标签中
+      const span = document.createElement("span")
+      span.innerHTML = currentP.innerHTML;
+      const previousP = currentP.previousElementSibling as HTMLElement;
+      previousP.appendChild(span)
+      currentP.remove();
+      // 将光标移动到span标签之前
+      range.setStart(span, 0);
+      range.setEnd(span, 0);
+      return true;
+    }
+    if (!currentP) return false;
+    // 选中当前光标之前的所有内容
+    range.setStart(currentP, 0);
+    range.setEnd(range.endContainer, range.endOffset);
+    // 获取选中的内容
+    const selectedContent = range.extractContents();
+    let lastChild = selectedContent.lastChild as HTMLElement;
+    // 如果最后一个节点是文本节点并且有内容，则使用默认行为
+    if (lastChild?.nodeName === "#text" && lastChild.textContent?.length) {
+      // 将选中的内容插入到当前P标签中
+      range.insertNode(selectedContent);
+      // 将光标移动到末尾
+      range.setStart(currentP, currentP.childNodes.length);
+      range.setEnd(currentP, currentP.childNodes.length);
+      return false
+    }
+    // 如果最后一个节点是文本节点
+    if (lastChild?.nodeName === "#text") {
+      // 如果文本节点为空，则删除最后一个节点并重新获取最后一个节点
+      lastChild.remove();
+      lastChild = selectedContent.lastChild as HTMLElement;
+    }
+
+    // 删除最后一个节点，然后将剩余内容插入到当前P标签中
+    selectedContent.lastChild?.remove();
+    const length = selectedContent.childNodes.length;
+    range.insertNode(selectedContent);
+    range.setStart(currentP, length);
+    range.setEnd(currentP, length);
+    // 判断当前P标签是否为空，如果为空，则删除
+    if (!currentP.innerText || currentP.innerText === "\n") {
+      currentP.remove();
+    }
+    return true
+  }
+
+  /**
+   * 删除内容
+   * @param e 键盘事件
+   * @returns 
+   */
   private _wordDelete(e: KeyboardEvent) {
     if (!this._editorEl.innerText || this._editorEl.innerText === "\n") {
       e.preventDefault();
       this._editorEl.innerHTML = EMPTY_INPUT
       return
     }
-    // e.preventDefault();
-    // const selection = this._getSelection();
-    // const range = selection?.getRangeAt(0);
-    // if (!range) return;
-    // // 获取选中内容
-    // const selectedContent = range.extractContents();
-    // // 如果存在选中内容
-    // if (selectedContent.childNodes.length) {
-    //   // 删除选中内容
-    //   range.deleteContents();
-    //   return;
-    // }
-    // console.log(range)
+    const selection = this._getSelection();
+    if (!selection) return
+    const range = selection.getRangeAt(0);
+    if (!range) return;
+    // 获取选中内容
+    const selectedContent = range.extractContents();
+    // 如果存在选中内容
+    if (selectedContent.childNodes.length) {
+      e.preventDefault();
+      // 删除选中内容
+      range.deleteContents();
+      return;
+    }
+    // 获取当前光标所在的P标签
+    let currentP = range.commonAncestorContainer as HTMLElement;
+    // 向上查找，直到找到p标签(用for循环防止死循环)
+    for (let i = 0; currentP && currentP.nodeName !== "P" && currentP.className !== P_TAG_CLASS && i < 10; i++) {
+      currentP = currentP.parentElement as HTMLElement;
+    }
+    if (e.code === "Backspace") {
+      const bool = this._onBackspace(range, currentP)
+      if (bool) e.preventDefault();
+    }
+    if (e.code === "Delete") {
+      const bool = this._onDelete(range, currentP)
+      if (bool) e.preventDefault();
+    }
   }
 
 
