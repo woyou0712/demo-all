@@ -49,6 +49,11 @@ interface OnEvents {
   "mention-users": ((user?: UserInfo) => void)[];
 }
 
+// p标签类名
+const P_TAG_CLASS = "hi-mention-row";
+// 空的输入框
+const EMPTY_INPUT = `<p class="${P_TAG_CLASS}"><br></p>`;
+
 class Mention {
   private _rootEl: HTMLElement;
   private _editorBody = document.createElement("section");
@@ -131,6 +136,7 @@ class Mention {
     const editor = this._editorEl;
     editor.classList.add("hi-mention-editor");
     editor.setAttribute("contenteditable", "true");
+    editor.innerHTML = EMPTY_INPUT
 
     const placeholderEl = this._placeholderEl;
     placeholderEl.classList.add("hi-mention-placeholder");
@@ -169,7 +175,71 @@ class Mention {
     this._events["focuses"].forEach((fn) => fn(e));
   }
 
+  private _wordWrap() {
+    // 获取当前光标位置
+    const selection = this._getSelection();
+    const range = selection?.getRangeAt(0);
+    if (!range) return;
+    // 删除选中的内容
+    range.deleteContents();
+    // 获取当前所在的p标签
+    let currentP = range.commonAncestorContainer as HTMLElement;
+    // 向上查找，直到找到p标签(用for循环防止死循环)
+    for (let i = 0; currentP && currentP.nodeName !== "P" && currentP.className !== P_TAG_CLASS && i < 10; i++) {
+      currentP = currentP.parentElement as HTMLElement;
+    }
+    // 创建一个换行的P标签
+    const p = document.createElement("p");
+    p.className = P_TAG_CLASS
+    // 将光标设置到当前所在P标签中并选中光标之前的内容
+    range.setStart(currentP, 0);
+    range.setEnd(range.endContainer, range.endOffset);
+    // // 获取光标选中的内容
+    const selectedContent = range.extractContents();
+    // // 将内容插入到新创建的p标签中
+    p.appendChild(selectedContent);
+    if (!p.innerText) {
+      p.innerHTML = "<br/>"
+    }
+    if (!currentP.innerText) {
+      currentP.innerHTML = "<br/>"
+    }
+    // 插入创建的p标签在原P标签之前
+    currentP?.insertAdjacentElement("beforebegin", p);
+    // 将光标移动到原P标签开头
+    range.setStart(currentP, 0);
+    range.setEnd(currentP, 0);
+  }
+
+  private _wordDelete(e: KeyboardEvent) {
+    if (!this._editorEl.innerText || this._editorEl.innerText === "\n") {
+      e.preventDefault();
+      this._editorEl.innerHTML = EMPTY_INPUT
+      return
+    }
+    // e.preventDefault();
+    // const selection = this._getSelection();
+    // const range = selection?.getRangeAt(0);
+    // if (!range) return;
+    // // 获取选中内容
+    // const selectedContent = range.extractContents();
+    // // 如果存在选中内容
+    // if (selectedContent.childNodes.length) {
+    //   // 删除选中内容
+    //   range.deleteContents();
+    //   return;
+    // }
+    // console.log(range)
+  }
+
+
   private _onkeydown(e: KeyboardEvent) {
+    if (["Enter", "NumpadEnter"].includes(e.code)) {
+      e.preventDefault();
+      this._wordWrap()
+    } else if (["Backspace", "Delete"].includes(e.code)) {
+      this._wordDelete(e)
+    }
     this._events["keydowns"].forEach((fn) => fn(e));
   }
   private _onkeyup(e: KeyboardEvent) {
@@ -184,10 +254,10 @@ class Mention {
 
   private _onchange() {
     const text = this._editorEl.innerText;
-    if (text) {
-      this._placeholderEl.style.display = "none";
-    } else {
+    if (!text || /^\n*$/.test(text)) {
       this._placeholderEl.style.display = "block";
+    } else {
+      this._placeholderEl.style.display = "none";
     }
     clearTimeout(this._changetimeout);
     this._changetimeout = setTimeout(() => {
@@ -364,7 +434,7 @@ class Mention {
     span.setAttribute("style", `color:${this._mentionColor}; cursor: pointer;`);
     span.classList.add("hi-mention-at-user");
 
-    span.innerHTML = `&nbsp;@${user[this._nameKey]}&nbsp;`;
+    span.innerText = `@${user[this._nameKey]}`;
     // 设置光标选中范围
     this._inputRange.setStart(this._inputRange.endContainer, this._inputRange.endOffset - (this._queryStr.length + 1));
     this._inputRange.setEnd(this._inputRange.endContainer, this._inputRange.endOffset);
@@ -430,8 +500,8 @@ class Mention {
    * @returns 返回当前实例
    */
   clear(): this {
-    this._editorEl.innerHTML = "";
-    this._events["changes"].forEach((fn) => fn({ text: "", html: "" }));
+    this._editorEl.innerHTML = EMPTY_INPUT;
+    this._events["changes"].forEach((fn) => fn({ text: "", html: EMPTY_INPUT }));
     return this;
   }
 
