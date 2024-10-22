@@ -31,20 +31,20 @@ interface MentionUser extends UserInfo {
 
 interface EventsType {
   input?: (e?: Event) => void;
-  focus?: (e?: Event) => void;
-  blur?: (e?: Event) => void;
-  keydown?: (e?: Event) => void;
-  keyup?: (e?: Event) => void;
+  focus?: (e?: FocusEvent) => void;
+  blur?: (e?: FocusEvent) => void;
+  keydown?: (e?: KeyboardEvent) => void;
+  keyup?: (e?: KeyboardEvent) => void;
   change?: (data?: { text: string; html: string }) => void;
   "mention-user"?: (user?: UserInfo) => void;
 }
 
 interface OnEvents {
   inputs: ((e?: Event) => void)[];
-  focuses: ((e?: Event) => void)[];
-  blurs: ((e?: Event) => void)[];
-  keydowns: ((e?: Event) => void)[];
-  keyups: ((e?: Event) => void)[];
+  focuses: ((e?: FocusEvent) => void)[];
+  blurs: ((e?: FocusEvent) => void)[];
+  keydowns: ((e?: KeyboardEvent) => void)[];
+  keyups: ((e?: KeyboardEvent) => void)[];
   changes: ((data?: { text: string; html: string }) => void)[];
   "mention-users": ((user?: UserInfo) => void)[];
 }
@@ -157,7 +157,7 @@ class Mention {
     return window.getSelection();
   }
 
-  private _onblur(e: Event) {
+  private _onblur(e: FocusEvent) {
     this._events["blurs"].forEach((fn) => fn(e));
     clearTimeout(this._blurtimeout);
     this._blurtimeout = setTimeout(() => {
@@ -165,14 +165,14 @@ class Mention {
     }, 200);
   }
 
-  private _onfocus(e: Event) {
+  private _onfocus(e: FocusEvent) {
     this._events["focuses"].forEach((fn) => fn(e));
   }
 
-  private _onkeydown(e: Event) {
+  private _onkeydown(e: KeyboardEvent) {
     this._events["keydowns"].forEach((fn) => fn(e));
   }
-  private _onkeyup(e: Event) {
+  private _onkeyup(e: KeyboardEvent) {
     this._events["keyups"].forEach((fn) => fn(e));
   }
 
