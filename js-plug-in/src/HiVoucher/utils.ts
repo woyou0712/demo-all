@@ -1,26 +1,25 @@
-export const createElement = (type: string, { className, style, content }: { className?: string, style?: { [key: string]: string }, content?: string | HTMLElement } = {}): HTMLElement => {
-  const element = document.createElement(type)
-  if (className) element.className = className
+export const createElement = <K extends keyof HTMLElementTagNameMap>(type: K, { className, style, content }: { className?: string; style?: { [key: string]: string }; content?: string | HTMLElement } = {}): HTMLElementTagNameMap[K] => {
+  const element = document.createElement(type);
+  if (className) element.className = className;
   if (style) {
-    Object.keys(style).forEach((key) => element.style[key as any] = style[key])
+    Object.keys(style).forEach((key) => (element.style[key as any] = style[key]));
   }
-  if (content && typeof content === "string") element.innerHTML = content
-  else if (content && typeof content === "object") element.appendChild(content)
-  return element
-}
+  if (content && typeof content === "string") element.innerHTML = content;
+  else if (content && typeof content === "object") element.appendChild(content);
+  return element;
+};
 
 export const createUUID = (): string => {
-  let result = ""
+  let result = "";
   for (let i = 0; i < 8; i++) {
-    result += Math.floor(Math.random() * 32).toString(32)
+    result += Math.floor(Math.random() * 32).toString(32);
   }
-  result += `-${Date.now().toString(32)}-`
+  result += `-${Date.now().toString(32)}-`;
   for (let i = 0; i < 8; i++) {
-    result += Math.floor(Math.random() * 32).toString(32)
+    result += Math.floor(Math.random() * 32).toString(32);
   }
-  return result
-}
-
+  return result;
+};
 
 export const voucherTemplateData = (): VoucherTemplate => ({
   // bg: "http://bills.bauble.vip/billBg/demo.png", // 背景图片
@@ -40,8 +39,8 @@ export const voucherTemplateData = (): VoucherTemplate => ({
   content: {
     texts: [textTemplateData()], // 文字
     inputs: [inputTemplateData()], // 输入框
-  }
-})
+  },
+});
 
 export const inputTemplateData = (): VoucherInputTemplate => ({
   type: "text", // 输入框类型
@@ -60,8 +59,8 @@ export const inputTemplateData = (): VoucherInputTemplate => ({
 
   maxlength: 0, // 输入框最大长度
   letterSpacing: 0, // 文字间距
-  placeholder: "" // 占位符
-})
+  placeholder: "", // 占位符
+});
 
 export const tableTemplateData = (): VoucherTableTemplate => ({
   name: "", // 表格名称
@@ -80,7 +79,7 @@ export const tableTemplateData = (): VoucherTableTemplate => ({
   colWidths: [100, 100, 100], // 列宽
   colAligns: ["left", "left", "left"], // 列对齐方式
   rowHeights: [32, 32, 32], // 行高
-})
+});
 
 export const textTemplateData = (): VoucherTextTemplate => ({
   name: "", // 文本名称
@@ -92,5 +91,4 @@ export const textTemplateData = (): VoucherTextTemplate => ({
   lineHeight: 14,
   content: "", // 文本内容
   bold: false, // 是否加粗
-})
-
+});

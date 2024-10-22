@@ -1,11 +1,11 @@
 <template>
-  <!-- <MentionDemo /> -->
-  <VoucherDemo />
+  <MentionDemo />
+  <!-- <VoucherDemo /> -->
 </template>
 
 <script lang="ts" setup>
-// import MentionDemo from "./components/MentionDemo/index.vue";
-import VoucherDemo from "./components/VoucherDemo/index.vue";
+import MentionDemo from "./components/MentionDemo/index.vue";
+// import VoucherDemo from "./components/VoucherDemo/index.vue";
 </script>
 
 <style>
