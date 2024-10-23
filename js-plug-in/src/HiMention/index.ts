@@ -1,5 +1,5 @@
 import { EDITOR_CLASS, EMPTY_INPUT, P_TAG_CLASS } from "./const";
-import { createElement, createEmptyNode, createTextNode, getCurrentP, getRangeAt, getSelection, isCursorAtEnd, isEmptyElement } from "./utils";
+import { createElement, createDocumentFragment, createTextNode, getCurrentP, getRangeAt, getSelection, isCursorAtEnd, isEmptyElement } from "./utils";
 
 class Mention {
   private _rootEl: HTMLElement;
@@ -583,7 +583,7 @@ class Mention {
   protected openUserList(query: string) {
     const userList = this._userList;
     userList.innerHTML = "";
-    const box = document.createDocumentFragment();
+    const box = createDocumentFragment();
     this._mentionUsers.forEach((user) => {
       const [id = 0, name = "", pingyin = ""] = [user[this._idKey], user[this._nameKey], user[this._avatarKey], user[this._pingyinKey]];
       const text = `${id}${name}${pingyin}`;
@@ -761,7 +761,7 @@ class Mention {
     const selection = getSelection();
     if (!selection) return this;
     const range = selection.getRangeAt(0);
-    range.insertNode(document.createTextNode(text));
+    range.insertNode(createTextNode(text));
     this._onchange();
     range.collapse(false);
     selection.removeAllRanges();

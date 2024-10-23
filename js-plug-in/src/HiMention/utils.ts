@@ -94,7 +94,7 @@ export const createTextNode = (text = ""): Text => {
 };
 
 // 创建一个空节点用来装载子元素
-export const createEmptyNode = (el?: HTMLElement | DocumentFragment): DocumentFragment => {
+export const createDocumentFragment = (el?: HTMLElement | DocumentFragment): DocumentFragment => {
   const fr = document.createDocumentFragment();
   if (el) {
     fr.appendChild(el);
