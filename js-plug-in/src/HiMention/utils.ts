@@ -1,4 +1,4 @@
-import { P_TAG_CLASS } from "./const";
+import { EDITOR_CLASS, P_TAG_CLASS } from "./const";
 
 export const createElement = <K extends keyof HTMLElementTagNameMap>(type: K, { className, style, content }: { className?: string; style?: { [key: string]: string }; content?: string | HTMLElement } = {}): HTMLElementTagNameMap[K] => {
   const element = document.createElement(type);
@@ -12,17 +12,39 @@ export const createElement = <K extends keyof HTMLElementTagNameMap>(type: K, { 
 };
 
 /**
+ * 获取当前光标所在的p标签
+ */
+export const getCurrentP = (range: Range): HTMLElement | null => {
+  let currentP = range.commonAncestorContainer as HTMLElement;
+  console.log("1==>", currentP, range);
+  if (!currentP) return null;
+  // 如果当前光标所在节点为根节点，则向下寻找p标签
+  if (currentP.className?.includes(EDITOR_CLASS)) {
+    currentP = currentP.childNodes[range.endOffset > 0 ? range.endOffset - 1 : 0] as HTMLElement;
+    if (currentP?.className !== P_TAG_CLASS) return null
+    // 修正光标位置
+    range.setStart(currentP, currentP.childNodes.length);
+    range.setEnd(currentP, currentP.childNodes.length);
+  }
+  console.log("2==>", currentP, range);
+  for (let i = 0; i < 10 && currentP.className !== P_TAG_CLASS; i++) {
+    currentP = currentP.parentElement as HTMLElement;
+  }
+  if (currentP?.className !== P_TAG_CLASS) return null
+  // 如果子节点大于1的情况下，删除所有BR子节点
+  if (currentP.childNodes.length > 1) {
+    const brs = currentP.querySelectorAll("br");
+    brs.forEach((br) => br.remove());
+  }
+  return currentP;
+}
+
+
+/**
  * 判断当前光标是否在p标签的末尾
  * @param currentP 当前光标所在的p标签
  */
 export const isCursorAtEnd = (range: Range, currentP: HTMLElement): boolean => {
-  // 格式化P标签，不许存在子元素的情况下出现BR标签
-  if (currentP.className === P_TAG_CLASS && currentP.childNodes.length > 1) {
-    // 删除所有的BR标签
-    const brs = currentP.querySelectorAll("br");
-    brs.forEach((br) => currentP.removeChild(br));
-  }
-
   // 判断光标是否在当前P元素末尾
   let isEnd = false;
   // 获取当前P标签中的最后一个标签
@@ -39,7 +61,7 @@ export const isCursorAtEnd = (range: Range, currentP: HTMLElement): boolean => {
   } else if (currentP.childNodes.length <= 1 && currentP.childNodes[0]?.nodeName === "BR") {
     // 如果只有一个换行符则认为光标在末尾
     isEnd = true
-  } else if (currentP.childNodes.length && currentP.childNodes.length === range.endOffset) {
+  } else if (currentP.childNodes.length && lastChild === range.endContainer && currentP.childNodes.length === range.endOffset) {
     isEnd = true
   }
   return isEnd;
@@ -62,6 +84,10 @@ export const createTextNode = (text = ""): Text => {
 }
 
 // 创建一个空节点用来装载子元素
-export const createEmptyNode = (): DocumentFragment => {
-  return document.createDocumentFragment();
+export const createEmptyNode = (el?: HTMLElement | DocumentFragment): DocumentFragment => {
+  const fr = document.createDocumentFragment();
+  if (el) {
+    fr.appendChild(el);
+  }
+  return fr;
 }

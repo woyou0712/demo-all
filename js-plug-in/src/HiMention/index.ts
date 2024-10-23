@@ -1,5 +1,5 @@
 import { EDITOR_CLASS, EMPTY_INPUT, P_TAG_CLASS } from "./const";
-import { createElement, createEmptyNode, createTextNode, getSelection, isCursorAtEnd, isEmptyElement } from "./utils";
+import { createElement, createEmptyNode, createTextNode, getCurrentP, getSelection, isCursorAtEnd, isEmptyElement } from "./utils";
 
 
 
@@ -135,6 +135,7 @@ class Mention {
       this._onchange(); // 不触发默认行为，需要手动触发change事件
     } else if (["Backspace", "Delete"].includes(e.code)) {
       const bool = this._wordDelete(e);
+      console.log(bool);
       if (bool) {
         e.preventDefault();
         this._onchange(); // 不触发默认行为，需要手动触发change事件
@@ -189,22 +190,19 @@ class Mention {
  * 内容换行
  */
   private _wordWrap() {
-    // 获取当前光标位置
+    // 获取当前光标位置f
     const selection = getSelection();
     const range = selection?.getRangeAt(0);
     if (!range) return;
     // 删除选中的内容
     range.deleteContents();
     // 获取当前所在的p标签
-    let currentP = range.commonAncestorContainer as HTMLElement;
-    // 向上查找，直到找到p标签(用for循环防止死循环)
-    for (let i = 0; currentP && currentP.nodeName !== "P" && currentP.className !== P_TAG_CLASS && !currentP.className?.includes(EDITOR_CLASS) && i < 10; i++) {
-      currentP = currentP.parentElement as HTMLElement;
-    }
+    let currentP = getCurrentP(range);
+    if (!currentP) return;
     // 创建一个换行的P标签
     const p = createElement("p", { className: P_TAG_CLASS });
     // 如果光标所在标签为编辑器根标签，则直接在编辑器标签中插入换行
-    if (currentP.className.includes(EDITOR_CLASS)) {
+    if (!currentP) {
       p.innerHTML = "<br/>";
       // 在光标位置插入新创建的p标签
       range.insertNode(p);
@@ -223,7 +221,6 @@ class Mention {
       range.setEnd(p, 0);
       return;
     }
-
     // 将光标设置到当前所在P标签中并选中光标之前的内容
     range.setStart(currentP, 0);
     range.setEnd(range.endContainer, range.endOffset);
@@ -294,9 +291,8 @@ class Mention {
    * @returns
    */
   private _onBackspace(range: Range, currentP: HTMLElement) {
-    if (!currentP) return false;
-    // 文本内容使用默认行为
-    if (range.commonAncestorContainer.nodeName === "#text") {
+    // 删除文本内容使用默认行为
+    if (range.commonAncestorContainer.nodeName === "#text" && range.startOffset > 0) {
       return false;
     }
     // 如果光标在开头，并且是第一个P标签，不执行操作
@@ -315,9 +311,6 @@ class Mention {
       }
       return true;
     }
-
-
-
     // 如果光标在当前行开头，并且有上一个兄弟节点，并且上一个节点是P标签
     if (range.startOffset === 0 && previousP && previousP.className === P_TAG_CLASS) {
       // 选中当前p标签的所有内容
@@ -364,7 +357,40 @@ class Mention {
       currentP.removeChild(lastChild)
       return true
     }
-    return false
+    // 选中光标之后的内容
+    range.setStart(currentP, 0);
+    range.setEnd(range.endContainer, range.endOffset);
+    // 获取选中内容，不从文本中删除
+    const selectedContent = range.extractContents();
+    // 删除末尾的空标签
+    while (selectedContent.lastChild && selectedContent.lastChild.nodeName === "#text" && !selectedContent.lastChild.textContent) {
+      selectedContent.removeChild(selectedContent.lastChild);
+    }
+    // 如果已经没有内容了，不做操作
+    if (!selectedContent.lastChild) return true
+    // 如果是文本节点,删除最后一个文字
+    if (selectedContent.lastChild.nodeName === "#text" && selectedContent.lastChild.textContent?.length) {
+      selectedContent.lastChild.textContent = selectedContent.lastChild.textContent.slice(0, -1);
+    } else {
+      // 删除有内容的节点
+      selectedContent.removeChild(selectedContent.lastChild);
+    }
+
+    const length = selectedContent.childNodes?.length || 0;
+    let isContent = false;
+    for (let i = 0; i < length; i++) {
+      const node = selectedContent.childNodes[i] as HTMLElement;
+      if (node.nodeName !== "#text" || node.textContent?.length) {
+        isContent = true;
+        break;
+      }
+    }
+    if (!isContent) return true;
+    range.insertNode(selectedContent);
+    // 将光标移动到P标签开头
+    range.setStart(currentP, length);
+    range.setEnd(currentP, length);
+    return true;
   }
 
   /**
@@ -390,10 +416,10 @@ class Mention {
       return true;
     }
     // 获取当前光标所在的P标签
-    let currentP = range.commonAncestorContainer as HTMLElement;
-    // 向上查找，直到找到p标签(用for循环防止死循环)
-    for (let i = 0; currentP && currentP.nodeName !== "P" && currentP.className !== P_TAG_CLASS && i < 10; i++) {
-      currentP = currentP.parentElement as HTMLElement;
+    let currentP = getCurrentP(range);
+    if (!currentP) {
+      this.focus(); // 恢复焦点
+      return true;
     }
     if (e.code === "Backspace") {
       return this._onBackspace(range, currentP);
@@ -680,16 +706,22 @@ class Mention {
    * @returns 返回当前实例
    */
   focus(): this {
-    // 将光标移动到编辑器末尾
-    this._editorEl.focus();
+    // 获取焦点
+    const selection = getSelection();
+    if (!selection) return this;
     const range = document.createRange();
     range.selectNodeContents(this._editorEl);
     range.collapse(false);
-    const selection = getSelection();
-    if (selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    // 找到最后一行P标签
+    let lastP = this._editorEl.lastElementChild
+    if (!lastP) {
+      lastP = createElement('p', { className: P_TAG_CLASS, content: "<br/>" });
+      this._editorEl.appendChild(lastP);
     }
+    range.setStart(lastP, lastP.childNodes.length);
+    range.setEnd(lastP, lastP.childNodes.length);
     return this;
   }
   /**
