@@ -133,12 +133,14 @@ class Mention {
       e.preventDefault();
       this._wordWrap();
       this._onchange(); // 不触发默认行为，需要手动触发change事件
+      this._inputEvent()
     } else if (["Backspace", "Delete"].includes(e.code)) {
       const bool = this._wordDelete(e);
       console.log(bool);
       if (bool) {
         e.preventDefault();
         this._onchange(); // 不触发默认行为，需要手动触发change事件
+        this._inputEvent()
       }
     }
     this._events["keydowns"].forEach((fn) => fn(e));
