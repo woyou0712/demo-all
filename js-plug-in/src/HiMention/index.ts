@@ -1,11 +1,11 @@
 import { EDITOR_CLASS, EMPTY_INPUT, P_TAG_CLASS } from "./const";
-import { createElement, createDocumentFragment, createTextNode, getCurrentP, getRangeAt, getSelection, isCursorAtEnd, isEmptyElement } from "./utils";
+import UserSelector, { defaultUserSelectorOptions, type UserSelectorOptions } from "./UserSelector";
+import { createElement, createTextNode, getCurrentP, getRangeAt, getSelection, isCursorAtEnd, isEmptyElement } from "./utils";
 
 class Mention {
   private _rootEl: HTMLElement;
   private _editorBody = createElement("section", { className: "hi-mention-body" });
   private _editorEl = createElement("div", { className: EDITOR_CLASS });
-  private _userList = createElement("div", { className: "hi-mention-user-list" });
   private _placeholderEl = createElement("div", { className: "hi-mention-placeholder" });
   private _events: OnEvents = {
     clicks: [],
@@ -24,21 +24,14 @@ class Mention {
   private _inputRange?: Range;
   private _inputSelection?: Selection;
 
-  private _idKey = "id";
-  private _nameKey = "name";
-  private _avatarKey = "avatar";
-  private _pingyinKey = "pingyin";
   private _placeholder = "请输入";
   private _placeholderColor = "#aaa";
 
   private _trigger = "@";
-  private _media: MediaType = "PC";
 
-  private _usersWdith = "200px";
-  private _usersHeight = "200px";
   private _mentionColor = "#0080FF";
-  private _mentionUsers: ViewUser[] = [];
-  private _users: UserInfo[] = [];
+
+  userSelector: UserSelector;
 
   private _queryStr = "";
 
@@ -55,31 +48,47 @@ class Mention {
     } else {
       this._rootEl = el as HTMLElement;
     }
+    this.userSelector = new UserSelector(this._rootEl);
+
     this._initOption(option);
     this._initElement();
     this._initEvent();
   }
 
   private _initOption(option: MentionOption) {
-    const { users = [], placeholder = "请输入", placeholderColor = "#aaa", usersWdith = "200px", usersHeight = "200px", idKey = "id", nameKey = "name", avatarKey = "avatar", pingyinKey = "pingyin", trigger = "@", media = "PC" } = option;
+    const {
+      trigger = "@",
+      mentionColor = "#0080FF",
+      placeholder = "请输入",
+      placeholderColor = "#aaa",
+      users = [],
+      idKey = "id",
+      nameKey = "name",
+      avatarKey = "avatar",
+      pingyinKey = "pingyin",
+      media = "PC",
+      usersWdith = "200px",
+      usersHeight = "200px",
+    } = option;
+    this._trigger = trigger;
+    this._mentionColor = mentionColor;
     this._placeholder = placeholder;
     this._placeholderColor = placeholderColor;
-    this._usersWdith = usersWdith;
-    this._usersHeight = usersHeight;
-    this._idKey = idKey;
-    this._nameKey = nameKey;
-    this._avatarKey = avatarKey;
-    this._pingyinKey = pingyinKey;
-    this._trigger = trigger;
-    this._media = media;
-
-    this.updateUsers(users);
+    this.userSelector.setOptions({
+      users,
+      idKey,
+      nameKey,
+      avatarKey,
+      pingyinKey,
+      media,
+      usersWdith,
+      usersHeight,
+    });
   }
 
   private _initElement() {
-    this._rootEl.setAttribute("style", `--hi-mention-user-list-width:${this._usersWdith};--hi-mention-user-list-height:${this._usersHeight};`);
+    this._rootEl.style.position = "relative";
     const body = this._editorBody;
-
     const editor = this._editorEl;
     editor.setAttribute("contenteditable", "true");
     editor.innerHTML = EMPTY_INPUT;
@@ -90,8 +99,6 @@ class Mention {
     body.appendChild(editor);
     body.appendChild(placeholderEl);
     this._rootEl.appendChild(body);
-
-    this.updateMedia(this._media);
   }
 
   private _initEvent() {
@@ -102,7 +109,10 @@ class Mention {
     this._editorEl.onkeyup = (e) => this._onkeyup(e);
     this._editorEl.oninput = (e) => this._oninput(e);
     // 监听鼠标在用户列表中按下事件，防止鼠标点击用户列表时，触发编辑器失去焦点事件
-    this._userList.onmousedown = () => setTimeout(() => clearTimeout(this._blurtimeout), 100);
+    this.userSelector.element.onmousedown = () => setTimeout(() => clearTimeout(this._blurtimeout), 100);
+    this.userSelector.onSelectUser((user) => {
+      this.mentionUser(user);
+    });
   }
 
   private _onclick(e: MouseEvent) {
@@ -117,7 +127,7 @@ class Mention {
     this._events["blurs"].forEach((fn) => fn(e));
     clearTimeout(this._blurtimeout);
     this._blurtimeout = setTimeout(() => {
-      this._hideUserList();
+      this._hideUserSelector();
     }, 200);
   }
 
@@ -166,24 +176,24 @@ class Mention {
 
   private _inputEvent() {
     const selection = getSelection();
-    if (!selection?.anchorNode?.textContent) return this._hideUserList();
+    if (!selection?.anchorNode?.textContent) return this._hideUserSelector();
     const text = selection.anchorNode.textContent.slice(0, selection.anchorOffset);
     const reg = new RegExp(`\\${this._trigger}[^\\s\\${this._trigger}]*$`);
-    if (!reg.test(text)) return this._hideUserList();
+    if (!reg.test(text)) return this._hideUserSelector();
     const t = reg.exec(text);
-    if (!t) return this._hideUserList();
+    if (!t) return this._hideUserSelector();
     this._inputSelection = selection;
     const range = getRangeAt(selection);
     if (!range) return;
     this._inputRange = range;
-    if (this._inputRange.endContainer?.nodeName !== "#text") return this._hideUserList();
+    if (this._inputRange.endContainer?.nodeName !== "#text") return this._hideUserSelector();
     const query = t[0]?.slice(1);
     this._queryStr = query;
-    this.openUserList(query);
+    this.openUserSelector(query);
   }
 
-  private _hideUserList() {
-    this._userList.style.display = "none";
+  private _hideUserSelector() {
+    this.userSelector.close();
   }
 
   /**
@@ -523,7 +533,7 @@ class Mention {
     if (selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
-      const { left, top, right, bottom } = this._editorBody.getBoundingClientRect();
+      const { left, top, right, bottom } = this._rootEl.getBoundingClientRect();
       // 根据光标在屏幕上的位置
       const positionY = window.innerHeight - bottom > top ? "top" : "bottom";
       const positionX = right - rect.right > rect.left - left ? "left" : "right";
@@ -537,9 +547,9 @@ class Mention {
     return null;
   }
 
-  private _getH5Position(): "top" | "bottom" | null {
+  private _getH5Position(): "top" | "bottom" {
     const selection = getSelection();
-    if (!selection) return null;
+    if (!selection) return "top";
     const { top, bottom } = this._rootEl.getBoundingClientRect();
     const positionY = window.innerHeight - bottom > top ? "top" : "bottom";
     return positionY;
@@ -561,7 +571,8 @@ class Mention {
   protected createUserElement(user: UserInfo): HTMLElement {
     if (user.element) return user.element;
     const element = createElement("div", { className: "hi-mention-user-item" });
-    const [name = "", avatar = ""] = [user[this._nameKey], user[this._avatarKey]];
+    const { nameKey, avatarKey } = this.userSelector.options;
+    const [name = "", avatar = ""] = [user[nameKey], user[avatarKey]];
     const left = createElement("div", { className: "hi-mention-user-item-left" });
     if (avatar) {
       const img = createElement("img");
@@ -580,40 +591,22 @@ class Mention {
    * @param query 查询字符串
    * @returns
    */
-  protected openUserList(query: string) {
-    const userList = this._userList;
-    userList.innerHTML = "";
-    const box = createDocumentFragment();
-    this._mentionUsers.forEach((user) => {
-      const [id = 0, name = "", pingyin = ""] = [user[this._idKey], user[this._nameKey], user[this._avatarKey], user[this._pingyinKey]];
-      const text = `${id}${name}${pingyin}`;
-      if (!query) box.appendChild(user.element);
-      else if (text.includes(query)) box.appendChild(user.element);
-    });
-    if (!box.hasChildNodes()) return this._hideUserList();
-    userList.appendChild(box);
-    if (this._media === "H5") {
+  protected openUserSelector(query: string) {
+    // 先根据查询字符串过滤用户列表
+    const bool = this.userSelector.viewUserItems(query);
+    if (!bool) return false; // 如果没有匹配的用户,则不打开用户列表
+    const { media } = this.userSelector.options;
+    if (media === "H5") {
       const positionY = this._getH5Position();
-      if (positionY) {
-        userList.style[positionY] = "100%";
-        if (positionY === "top") {
-          userList.style.bottom = "initial";
-        } else {
-          userList.style.top = "initial";
-        }
-      }
+      this.userSelector.setPosition("H5", positionY);
     } else {
       const cursorPosition = this._getCursorPosition();
       if (cursorPosition) {
-        userList.style[cursorPosition.positionY] = `${cursorPosition[cursorPosition.positionY]}px`;
-        userList.style[cursorPosition.positionX] = `${cursorPosition[cursorPosition.positionX]}px`;
-        if (cursorPosition.positionY === "bottom") userList.style.top = "initial";
-        if (cursorPosition.positionY === "top") userList.style.bottom = "initial";
-        if (cursorPosition.positionX === "right") userList.style.left = "initial";
-        if (cursorPosition.positionX === "left") userList.style.right = "initial";
+        this.userSelector.setPosition("PC", cursorPosition);
       }
     }
-    this._userList.style.display = "block";
+    this.userSelector.open();
+    return true;
   }
 
   /**
@@ -656,17 +649,17 @@ class Mention {
    */
   mentionUser(user: UserInfo): this {
     if (!this._inputRange) return this;
-
+    const { nameKey, idKey } = this.userSelector.options;
     // 创建一个span元素来表示用户
     const span = createElement("span", {
       className: "hi-mention-at-user",
-      content: `@${user[this._nameKey]}`,
+      content: `@${user[nameKey]}`,
       style: {
         color: this._mentionColor,
         cursor: "pointer",
       },
     });
-    span.setAttribute("data-id", user[this._idKey]);
+    span.setAttribute("data-id", user[idKey]);
     span.setAttribute("contenteditable", "false");
     const range = this._inputRange;
     // 设置光标选中@符号之后的内容
@@ -695,48 +688,7 @@ class Mention {
 
     this._events["mention-users"].forEach((fn) => fn(user));
     this._onchange();
-    this._hideUserList();
-    return this;
-  }
-
-  /**
-   * 更新用户列表
-   * @param list 用户列表
-   * @returns 返回当前实例
-   */
-  updateUsers(list: UserInfo[]): this {
-    this._users = list;
-    this._mentionUsers = list.map((user) => {
-      let element = user.element;
-      if (!element) {
-        element = this.createUserElement(user);
-      }
-      element.addEventListener("click", () => {
-        this.mentionUser(user);
-      });
-      return { ...user, element };
-    });
-    return this;
-  }
-
-  /**
-   * 跟新媒体类型
-   * @param type 媒体类型
-   * @returns 返回当前实例
-   */
-  updateMedia(type: MediaType): this {
-    this._media = type;
-    const users = this._userList;
-    if (users.parentNode) users.parentNode.removeChild(users);
-    if (this._media === "H5") {
-      users.classList.add("h5");
-      users.style.left = "0";
-      this._rootEl.appendChild(users);
-      this._rootEl.style.position = "relative";
-    } else {
-      users.classList.remove("h5");
-      this._editorBody.appendChild(users);
-    }
+    this._hideUserSelector();
     return this;
   }
 
@@ -828,10 +780,11 @@ class Mention {
    */
   getMentions(): UserInfo[] {
     const nodes = this._editorEl.querySelectorAll(".hi-mention-at-user");
+    const { users, idKey } = this.userSelector.options;
     return Array.from(nodes)
       .map((node) => {
         const id = node.getAttribute("data-id");
-        return this._users.find((user) => String(user[this._idKey]) === String(id));
+        return users.find((user) => String(user[idKey]) === String(id));
       })
       .filter(Boolean) as UserInfo[];
   }

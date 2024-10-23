@@ -23,6 +23,8 @@ interface MentionOption {
   usersHeight?: string;
 
   users?: UserInfo[];
+
+  mentionColor?: string;
 }
 
 interface ViewUser extends UserInfo {

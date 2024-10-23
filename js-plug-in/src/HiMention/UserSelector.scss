@@ -1,4 +1,4 @@
-div.hi-mention-user-list {
+div.hi-mention-user-selector {
   position: absolute;
   background-color: #fff;
   padding: 2px 5px;
@@ -6,11 +6,11 @@ div.hi-mention-user-list {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin: 0;
   border-radius: 4px;
-  width: var(--hi-mention-user-list-width);
-  max-height: var(--hi-mention-user-list-height);
   overflow-y: auto;
   z-index: 999;
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s;
 
   &.h5 {
     width: 100%;
@@ -37,7 +37,7 @@ div.hi-mention-user-list {
     background-color: #ddd;
   }
 
-  &>div.hi-mention-user-item {
+  & > div.hi-mention-user-item {
     width: 100%;
     display: flex;
     align-items: center;
@@ -49,7 +49,7 @@ div.hi-mention-user-list {
       background-color: #f5f5f5;
     }
 
-    &>div.hi-mention-user-item-left {
+    & > div.hi-mention-user-item-left {
       width: 24px;
       height: 24px;
       border-radius: 50%;
@@ -66,7 +66,7 @@ div.hi-mention-user-list {
       }
     }
 
-    &>div.hi-mention-user-item-right {
+    & > div.hi-mention-user-item-right {
       width: calc(100% - 34px);
       font-size: 14px;
       /* 文本不换行，溢出隐藏 */
@@ -74,6 +74,5 @@ div.hi-mention-user-list {
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
   }
 }
