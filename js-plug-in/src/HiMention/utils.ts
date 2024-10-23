@@ -45,6 +45,8 @@ export const getCurrentP = (range: Range): HTMLElement | null => {
  * @param currentP 当前光标所在的p标签
  */
 export const isCursorAtEnd = (range: Range, currentP: HTMLElement): boolean => {
+  // 如果当前光标坐在P表示是空的，则认为光标在末尾
+  if (isEmptyElement(currentP)) return true;
   // 判断光标是否在当前P元素末尾
   let isEnd = false;
   // 获取当前P标签中的最后一个标签
@@ -77,6 +79,18 @@ export const isEmptyElement = (element: HTMLElement): boolean => {
 
 export const getSelection = (): Selection | null => {
   return window.getSelection();
+}
+
+export const getRangeAt = (selection: Selection | null, index = 0): Range | null => {
+  if (!selection) return null
+  const range = selection.getRangeAt(index)
+  if (!range) return null
+  // 如果当前光标不在P标签中，则将光标移动到P标签中
+  const currentP = getCurrentP(range)
+  if (currentP) {
+    return range
+  }
+  return null
 }
 
 export const createTextNode = (text = ""): Text => {
