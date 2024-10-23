@@ -20,23 +20,22 @@ export const getCurrentP = (range: Range): HTMLElement | null => {
   // 如果当前光标所在节点为根节点，则向下寻找p标签
   if (currentP.className?.includes(EDITOR_CLASS)) {
     currentP = currentP.childNodes[range.endOffset > 0 ? range.endOffset - 1 : 0] as HTMLElement;
-    if (currentP?.className !== P_TAG_CLASS) return null
+    if (currentP?.className !== P_TAG_CLASS) return null;
     // 修正光标位置
-    range.setStart(currentP, currentP.childNodes.length);
-    range.setEnd(currentP, currentP.childNodes.length);
+    range.setStart(currentP, range.startOffset);
+    range.setEnd(currentP, range.endOffset);
   }
   for (let i = 0; i < 10 && currentP.className !== P_TAG_CLASS; i++) {
     currentP = currentP.parentElement as HTMLElement;
   }
-  if (currentP?.className !== P_TAG_CLASS) return null
+  if (currentP?.className !== P_TAG_CLASS) return null;
   // 如果子节点大于1的情况下，删除所有BR子节点
   if (currentP.childNodes.length > 1) {
     const brs = currentP.querySelectorAll("br");
     brs.forEach((br) => br.remove());
   }
   return currentP;
-}
-
+};
 
 /**
  * 判断当前光标是否在p标签的末尾
@@ -60,9 +59,9 @@ export const isCursorAtEnd = (range: Range, currentP: HTMLElement): boolean => {
     isEnd = true;
   } else if (currentP.childNodes.length <= 1 && currentP.childNodes[0]?.nodeName === "BR") {
     // 如果只有一个换行符则认为光标在末尾
-    isEnd = true
+    isEnd = true;
   } else if (currentP.childNodes.length && lastChild === range.endContainer && currentP.childNodes.length === range.endOffset) {
-    isEnd = true
+    isEnd = true;
   }
   return isEnd;
 };
@@ -74,26 +73,25 @@ export const isEmptyElement = (element: HTMLElement): boolean => {
   return Boolean(!element.innerText || element.innerText === "\n");
 };
 
-
 export const getSelection = (): Selection | null => {
   return window.getSelection();
-}
+};
 
 export const getRangeAt = (selection: Selection | null, index = 0): Range | null => {
-  if (!selection) return null
-  const range = selection.getRangeAt(index)
-  if (!range) return null
+  if (!selection) return null;
+  const range = selection.getRangeAt(index);
+  if (!range) return null;
   // 如果当前光标不在P标签中，则将光标移动到P标签中
-  const currentP = getCurrentP(range)
+  const currentP = getCurrentP(range);
   if (currentP) {
-    return range
+    return range;
   }
-  return null
-}
+  return null;
+};
 
 export const createTextNode = (text = ""): Text => {
   return document.createTextNode(text);
-}
+};
 
 // 创建一个空节点用来装载子元素
 export const createEmptyNode = (el?: HTMLElement | DocumentFragment): DocumentFragment => {
@@ -102,4 +100,4 @@ export const createEmptyNode = (el?: HTMLElement | DocumentFragment): DocumentFr
     fr.appendChild(el);
   }
   return fr;
-}
+};
