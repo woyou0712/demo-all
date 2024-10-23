@@ -1,62 +1,7 @@
-import { createElement, isCursorAtEnd, isEmptyElement } from "./utils";
+import { EDITOR_CLASS, EMPTY_INPUT, P_TAG_CLASS } from "./const";
+import { createElement, createEmptyNode, createTextNode, getSelection, isCursorAtEnd, isEmptyElement } from "./utils";
 
-interface UserInfo {
-  id?: string | number;
-  name?: string;
-  avatar?: string;
-  pingyin?: string;
-  element?: HTMLElement;
-  [key: string]: any;
-}
 
-type MediaType = "H5" | "PC";
-
-interface MentionOption {
-  idKey?: string; // id字段
-  nameKey?: string; // 名称字段
-  avatarKey?: string; // 头像字段
-  pingyinKey?: string; // 拼音字段
-
-  trigger?: string; // 触发字符
-  media?: MediaType; // 媒体类型
-  placeholder?: string;
-  placeholderColor?: string;
-  usersWdith?: string;
-  usersHeight?: string;
-
-  users?: UserInfo[];
-}
-
-interface MentionUser extends UserInfo {
-  element: HTMLElement;
-}
-
-interface EventsType {
-  input?: (e?: Event) => void;
-  focus?: (e?: FocusEvent) => void;
-  blur?: (e?: FocusEvent) => void;
-  keydown?: (e?: KeyboardEvent) => void;
-  keyup?: (e?: KeyboardEvent) => void;
-  change?: (data?: { text: string; html: string }) => void;
-  "mention-user"?: (user?: UserInfo) => void;
-}
-
-interface OnEvents {
-  inputs: ((e?: Event) => void)[];
-  focuses: ((e?: FocusEvent) => void)[];
-  blurs: ((e?: FocusEvent) => void)[];
-  keydowns: ((e?: KeyboardEvent) => void)[];
-  keyups: ((e?: KeyboardEvent) => void)[];
-  changes: ((data?: { text: string; html: string }) => void)[];
-  "mention-users": ((user?: UserInfo) => void)[];
-}
-
-// 编辑器类名
-const EDITOR_CLASS = "hi-mention-editor";
-// p标签类名
-const P_TAG_CLASS = "hi-mention-row";
-// 空的输入框
-const EMPTY_INPUT = `<p class="${P_TAG_CLASS}"><br></p>`;
 
 class Mention {
   private _rootEl: HTMLElement;
@@ -65,6 +10,7 @@ class Mention {
   private _userList = createElement("div", { className: "hi-mention-user-list" });
   private _placeholderEl = createElement("div", { className: "hi-mention-placeholder" });
   private _events: OnEvents = {
+    clicks: [],
     blurs: [],
     focuses: [],
     changes: [],
@@ -151,6 +97,7 @@ class Mention {
   }
 
   private _initEvent() {
+    this._editorEl.onclick = (e) => this._onclick(e);
     this._editorEl.onblur = (e) => this._onblur(e);
     this._editorEl.onfocus = (e) => this._onfocus(e);
     this._editorEl.onkeydown = (e) => this._onkeydown(e);
@@ -160,8 +107,12 @@ class Mention {
     this._userList.onmousedown = () => setTimeout(() => clearTimeout(this._blurtimeout), 100);
   }
 
-  private _getSelection() {
-    return window.getSelection();
+  private _onclick(e: MouseEvent) {
+    if (e.target === this._editorEl) {
+      e.preventDefault();
+      this._editorEl.focus();
+    }
+    this._events["clicks"].forEach((fn) => fn(e));
   }
 
   private _onblur(e: FocusEvent) {
@@ -176,12 +127,70 @@ class Mention {
     this._events["focuses"].forEach((fn) => fn(e));
   }
 
+
+  private _onkeydown(e: KeyboardEvent) {
+    if (["Enter", "NumpadEnter"].includes(e.code)) {
+      e.preventDefault();
+      this._wordWrap();
+      this._onchange(); // 不触发默认行为，需要手动触发change事件
+    } else if (["Backspace", "Delete"].includes(e.code)) {
+      const bool = this._wordDelete(e);
+      if (bool) {
+        e.preventDefault();
+        this._onchange(); // 不触发默认行为，需要手动触发change事件
+      }
+    }
+    this._events["keydowns"].forEach((fn) => fn(e));
+  }
+  private _onkeyup(e: KeyboardEvent) {
+    this._events["keyups"].forEach((fn) => fn(e));
+  }
+
+  private _oninput(e: Event) {
+    this._events["inputs"].forEach((fn) => fn(e));
+    this._onchange();
+    this._inputEvent();
+  }
+
+  private _onchange() {
+    const text = this._editorEl.innerText;
+    if (!text || /^\n*$/.test(text)) {
+      this._placeholderEl.style.display = "block";
+    } else {
+      this._placeholderEl.style.display = "none";
+    }
+    clearTimeout(this._changetimeout);
+    this._changetimeout = setTimeout(() => {
+      this._events["changes"].forEach((fn) => fn({ text: this._editorEl.innerText, html: this._editorEl.innerHTML }));
+    }, 300);
+  }
+
+  private _inputEvent() {
+    const selection = getSelection();
+    if (!selection?.anchorNode?.textContent) return this._hideUserList();
+    const text = selection.anchorNode.textContent.slice(0, selection.anchorOffset);
+    const reg = new RegExp(`\\${this._trigger}[^\\s\\${this._trigger}]*$`);
+    if (!reg.test(text)) return this._hideUserList();
+    const t = reg.exec(text);
+    if (!t) return this._hideUserList();
+    this._inputSelection = selection;
+    this._inputRange = selection.getRangeAt(0);
+    if (this._inputRange.endContainer?.nodeName !== "#text") return this._hideUserList();
+    const query = t[0]?.slice(1);
+    this._queryStr = query;
+    this.openUserList(query);
+  }
+
+  private _hideUserList() {
+    this._userList.style.display = "none";
+  }
+
   /**
-   * 内容换行
-   */
+ * 内容换行
+ */
   private _wordWrap() {
     // 获取当前光标位置
-    const selection = this._getSelection();
+    const selection = getSelection();
     const range = selection?.getRangeAt(0);
     if (!range) return;
     // 删除选中的内容
@@ -243,9 +252,10 @@ class Mention {
    */
   private _onDelete(range: Range, currentP: HTMLElement) {
     // 如果光标所在为text节点，并且不在当前节点的末尾，则使用默认行为
-    if (range.commonAncestorContainer.nodeName === "#text" && range.endOffset < Number(range.commonAncestorContainer.textContent?.length)) {
+    if (range.commonAncestorContainer?.nodeName === "#text" && range.endOffset < Number(range.commonAncestorContainer.textContent?.length)) {
       return false;
     }
+
     // 如果光标在末尾，并且是最后一个P标签，不执行操作
     const isEnd = isCursorAtEnd(range, currentP);
     // 如果光标在当前P标签的末尾，并且是最后一个P标签，不执行操作
@@ -255,16 +265,26 @@ class Mention {
     // 如果光标在当前P标签的末尾，并且不是最后一个P标签，将下一个P标签的内容写入当前P标签中，并删除下一个P标签
     if (isEnd && currentP.nextElementSibling?.className === P_TAG_CLASS) {
       const nextP = currentP.nextElementSibling as HTMLElement;
-      // 获取下一个P标签的第一个节点
-      const firstChild = nextP.childNodes[0];
-      nextP.childNodes.forEach((node) => currentP.appendChild(node));
+      // 如果下一个P标签为空标签，则直接删除
+      if (isEmptyElement(nextP)) {
+        nextP.remove();
+        return true;
+      }
+      // 选中下一个P标签的所有内容
+      range.setStart(nextP, 0);
+      range.setEnd(nextP, nextP.childNodes.length);
+      // 获取选中内容
+      const selectedContent = range.extractContents();
+      // 将光标移动到当前P标签的末尾
+      range.setStart(currentP, currentP.childNodes.length);
+      range.setEnd(currentP, currentP.childNodes.length);
+      // 将下一个P标签的内容添加到当前P标签中
+      currentP.appendChild(selectedContent);
       nextP.remove();
-      range.setStart(firstChild, 0);
-      range.setEnd(firstChild, 0);
       return true;
     }
 
-    return true;
+    return false;
   }
 
   /**
@@ -275,7 +295,6 @@ class Mention {
    */
   private _onBackspace(range: Range, currentP: HTMLElement) {
     if (!currentP) return false;
-    // debugger;
     // 文本内容使用默认行为
     if (range.commonAncestorContainer.nodeName === "#text") {
       return false;
@@ -286,60 +305,66 @@ class Mention {
     }
     // 获取当前光标所在P标签的上一个兄弟节点
     const previousP = currentP.previousElementSibling as HTMLElement;
-    // 如果有上一个兄弟节点，并且是P标签
-    if (previousP && previousP.className === P_TAG_CLASS) {
-      // 如果当前节点是空标签，直接删除
-      if (isEmptyElement(currentP)) {
+    // 如果当前节点是空标签
+    if (isEmptyElement(currentP)) {
+      // 如果有上一个兄弟节点，并且上一个节点是P标签
+      if (previousP && previousP.className === P_TAG_CLASS) {
         currentP.remove();
-      } else if (range.startOffset === 0) {
-        // 如果光标在当前节点开头，则将当前节点内容写入上一个节点，并删除当前节点
-        currentP.childNodes.forEach((node) => {
-          previousP.appendChild(node);
-        });
-        currentP.remove();
-      } else {
-        return false;
-      }
-      if (isEmptyElement(previousP)) {
-        range.setStart(previousP, 0);
-        range.setEnd(previousP, 0);
+        range.setStart(previousP, previousP.childNodes.length);
+        range.setEnd(previousP, previousP.childNodes.length);
       }
       return true;
     }
 
-    // 选中当前光标之前的所有内容
-    range.setStart(currentP, 0);
-    range.setEnd(range.endContainer, range.endOffset);
-    // 获取选中的内容
-    const selectedContent = range.extractContents();
-    let lastChild = selectedContent.lastChild as HTMLElement;
-    // 如果最后一个节点是文本节点并且有内容，则使用默认行为
-    if (lastChild?.nodeName === "#text" && lastChild.textContent?.length) {
-      // 将选中的内容插入到当前P标签中
-      range.insertNode(selectedContent);
-      // 将光标移动到末尾
-      range.setStart(currentP, currentP.childNodes.length);
-      range.setEnd(currentP, currentP.childNodes.length);
-      return false;
-    }
-    // 如果最后一个节点是文本节点
-    if (lastChild?.nodeName === "#text") {
-      // 如果文本节点为空，则删除最后一个节点并重新获取最后一个节点
-      lastChild.remove();
-      lastChild = selectedContent.lastChild as HTMLElement;
-    }
 
-    // 删除最后一个节点，然后将剩余内容插入到当前P标签中
-    selectedContent.lastChild?.remove();
-    const length = selectedContent.childNodes.length;
-    range.insertNode(selectedContent);
-    range.setStart(currentP, length);
-    range.setEnd(currentP, length);
-    // 判断当前P标签是否为空，如果为空，则删除
-    if (isEmptyElement(currentP)) {
+
+    // 如果光标在当前行开头，并且有上一个兄弟节点，并且上一个节点是P标签
+    if (range.startOffset === 0 && previousP && previousP.className === P_TAG_CLASS) {
+      // 选中当前p标签的所有内容
+      range.setStart(currentP, 0);
+      range.setEnd(currentP, currentP.childNodes.length);
+      // 获取选中内容
+      const selectedContent = range.extractContents();
+      let endIndex = previousP.childNodes.length
+      if (isEmptyElement(previousP)) {
+        endIndex = 0
+        previousP.innerHTML = ""
+      }
+      // 将光标移动到上一个P标签的末尾
+      range.setStart(previousP, endIndex);
+      range.setEnd(previousP, endIndex);
+      // 将当前P标签的内容添加到上一个P标签中
+      previousP.appendChild(selectedContent);
       currentP.remove();
+      return true
     }
-    return true;
+    // 如果光标在当前行的末尾
+    if (isCursorAtEnd(range, currentP)) {
+      // 获取当前标签的最后一个节点
+      let lastIndex = currentP.childNodes.length - 1;
+      let lastChild = currentP.childNodes[lastIndex] as HTMLElement;
+      // 如果最后一个节点是文本节点
+      if (lastChild.nodeName === "#text") {
+        // 有内容，则使用默认行为
+        if (lastChild.textContent?.length) return false;
+        // 没有内容，则删除最后一个节点
+        currentP.removeChild(lastChild)
+        lastIndex--
+        // 继续向上查找，找到有内容的节点为止
+        for (; lastIndex >= 0; lastIndex--) {
+          const node = currentP.childNodes[lastIndex] as HTMLElement;
+          if (node.nodeName === "#text" && !node.textContent?.length) {
+            currentP.removeChild(node)
+            continue
+          }
+          lastChild = node;
+          break;
+        }
+      }
+      currentP.removeChild(lastChild)
+      return true
+    }
+    return false
   }
 
   /**
@@ -349,23 +374,20 @@ class Mention {
    */
   private _wordDelete(e: KeyboardEvent) {
     if (isEmptyElement(this._editorEl)) {
-      e.preventDefault();
       this._editorEl.innerHTML = EMPTY_INPUT;
       this.focus();
-      return;
+      return true;
     }
-    const selection = this._getSelection();
-    if (!selection) return;
+    const selection = getSelection();
+    if (!selection) return false;
     const range = selection.getRangeAt(0);
-    if (!range) return;
+    if (!range) return false;
     // 获取选中内容
     const selectedContent = range.extractContents();
-    // 如果存在选中内容
+    // 如果存在选中内容,删除选中内容
     if (selectedContent.childNodes.length) {
-      e.preventDefault();
-      // 删除选中内容
       range.deleteContents();
-      return;
+      return true;
     }
     // 获取当前光标所在的P标签
     let currentP = range.commonAncestorContainer as HTMLElement;
@@ -374,69 +396,16 @@ class Mention {
       currentP = currentP.parentElement as HTMLElement;
     }
     if (e.code === "Backspace") {
-      const bool = this._onBackspace(range, currentP);
-      if (bool) e.preventDefault();
+      return this._onBackspace(range, currentP);
     }
     if (e.code === "Delete") {
-      const bool = this._onDelete(range, currentP);
-      if (bool) e.preventDefault();
+      return this._onDelete(range, currentP);
     }
   }
 
-  private _onkeydown(e: KeyboardEvent) {
-    if (["Enter", "NumpadEnter"].includes(e.code)) {
-      e.preventDefault();
-      this._wordWrap();
-    } else if (["Backspace", "Delete"].includes(e.code)) {
-      this._wordDelete(e);
-    }
-    this._events["keydowns"].forEach((fn) => fn(e));
-  }
-  private _onkeyup(e: KeyboardEvent) {
-    this._events["keyups"].forEach((fn) => fn(e));
-  }
-
-  private _oninput(e: Event) {
-    this._events["inputs"].forEach((fn) => fn(e));
-    this._onchange();
-    this._inputEvent();
-  }
-
-  private _onchange() {
-    const text = this._editorEl.innerText;
-    if (!text || /^\n*$/.test(text)) {
-      this._placeholderEl.style.display = "block";
-    } else {
-      this._placeholderEl.style.display = "none";
-    }
-    clearTimeout(this._changetimeout);
-    this._changetimeout = setTimeout(() => {
-      this._events["changes"].forEach((fn) => fn({ text: this._editorEl.innerText, html: this._editorEl.innerHTML }));
-    }, 300);
-  }
-
-  private _inputEvent() {
-    const selection = this._getSelection();
-    if (!selection?.anchorNode?.textContent) return this._hideUserList();
-    const text = selection.anchorNode.textContent.slice(0, selection.anchorOffset);
-    const reg = new RegExp(`\\${this._trigger}[^\\s\\${this._trigger}]*$`);
-    if (!reg.test(text)) return this._hideUserList();
-    const t = reg.exec(text);
-    if (!t) return this._hideUserList();
-    this._inputSelection = selection;
-    this._inputRange = selection.getRangeAt(0);
-    if (this._inputRange.endContainer?.nodeName !== "#text") return this._hideUserList();
-    const query = t[0]?.slice(1);
-    this._queryStr = query;
-    this.openUserList(query);
-  }
-
-  private _hideUserList() {
-    this._userList.style.display = "none";
-  }
 
   private _getCursorPosition(): { left: number; top: number; right: number; bottom: number; positionY: "top" | "bottom"; positionX: "left" | "right" } | null {
-    const selection = this._getSelection();
+    const selection = getSelection();
     if (!selection) return null;
     if (selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
@@ -456,7 +425,7 @@ class Mention {
   }
 
   private _getH5Position(): "top" | "bottom" | null {
-    const selection = this._getSelection();
+    const selection = getSelection();
     if (!selection) return null;
     const { top, bottom } = this._rootEl.getBoundingClientRect();
     const positionY = window.innerHeight - bottom > top ? "top" : "bottom";
@@ -464,7 +433,7 @@ class Mention {
   }
 
   private _isCursorInEditor() {
-    const selection = this._getSelection();
+    const selection = getSelection();
     if (!selection?.anchorNode) return false;
     const range = selection.getRangeAt(0);
     if (!range.commonAncestorContainer) return false;
@@ -574,6 +543,7 @@ class Mention {
    */
   mentionUser(user: UserInfo): this {
     if (!this._inputRange) return this;
+
     // 创建一个span元素来表示用户
     const span = createElement("span", {
       className: "hi-mention-at-user",
@@ -585,23 +555,34 @@ class Mention {
     });
     span.setAttribute("data-id", user[this._idKey]);
     span.setAttribute("contenteditable", "false");
-
-    // 设置光标选中范围
-    this._inputRange.setStart(this._inputRange.endContainer, this._inputRange.endOffset - (this._queryStr.length + 1));
-    this._inputRange.setEnd(this._inputRange.endContainer, this._inputRange.endOffset);
-    // 删除选中范围的内容
-    this._inputRange.deleteContents();
-    // 将span元素插入到光标位置
-    this._inputRange.insertNode(span);
+    const range = this._inputRange
+    // 设置光标选中@符号之后的内容
+    range.setStart(range.endContainer, range.endOffset - (this._queryStr.length + 1));
+    range.setEnd(range.endContainer, range.endOffset);
+    // 删除选中的内容
+    range.deleteContents();
+    // 如果输入框没有内容，则直接完整替换内容
+    if (isEmptyElement(this._editorEl)) {
+      const div = createElement("div")
+      const p = createElement("p", { className: P_TAG_CLASS })
+      p.appendChild(span)
+      div.appendChild(p)
+      this._editorEl.innerHTML = div.innerHTML
+      this.focus()
+    } else {
+      // 否则将span元素插入到光标位置
+      range.insertNode(span);
+      const selection = this._inputSelection;
+      if (selection) {
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    }
 
     this._events["mention-users"].forEach((fn) => fn(user));
     this._onchange();
     this._hideUserList();
-    const selection = this._inputSelection;
-    if (!selection) return this;
-    this._inputRange.collapse(false);
-    selection.removeAllRanges();
-    selection.addRange(this._inputRange);
     return this;
   }
 
@@ -664,7 +645,7 @@ class Mention {
    */
   insertText(text: string): this {
     if (!this._isCursorInEditor()) return this;
-    const selection = this._getSelection();
+    const selection = getSelection();
     if (!selection) return this;
     const range = selection.getRangeAt(0);
     range.insertNode(document.createTextNode(text));
@@ -682,7 +663,7 @@ class Mention {
    */
   insertHtml(html: Element): this {
     if (!this._isCursorInEditor()) return this;
-    const selection = this._getSelection();
+    const selection = getSelection();
     if (!selection) return this;
     const range = selection.getRangeAt(0);
     html.setAttribute("contenteditable", "false");
@@ -704,7 +685,7 @@ class Mention {
     const range = document.createRange();
     range.selectNodeContents(this._editorEl);
     range.collapse(false);
-    const selection = window.getSelection();
+    const selection = getSelection();
     if (selection) {
       selection.removeAllRanges();
       selection.addRange(range);
