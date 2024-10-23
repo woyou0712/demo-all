@@ -16,7 +16,6 @@ export const createElement = <K extends keyof HTMLElementTagNameMap>(type: K, { 
  */
 export const getCurrentP = (range: Range): HTMLElement | null => {
   let currentP = range.commonAncestorContainer as HTMLElement;
-  console.log("1==>", currentP, range);
   if (!currentP) return null;
   // 如果当前光标所在节点为根节点，则向下寻找p标签
   if (currentP.className?.includes(EDITOR_CLASS)) {
@@ -26,7 +25,6 @@ export const getCurrentP = (range: Range): HTMLElement | null => {
     range.setStart(currentP, currentP.childNodes.length);
     range.setEnd(currentP, currentP.childNodes.length);
   }
-  console.log("2==>", currentP, range);
   for (let i = 0; i < 10 && currentP.className !== P_TAG_CLASS; i++) {
     currentP = currentP.parentElement as HTMLElement;
   }

@@ -25,7 +25,7 @@ interface MentionOption {
   users?: UserInfo[];
 }
 
-interface MentionUser extends UserInfo {
+interface ViewUser extends UserInfo {
   element: HTMLElement;
 }
 

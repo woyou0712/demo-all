@@ -7,7 +7,14 @@ export default class UserList {
   private _idKey = "id";
   private _nameKey = "name";
   private _avatarKey = "avatar";
+  private _pingyinKey = "pingyin";
 
+  private _users: UserInfo[] = [];
+  get users() { return this._users }
+
+  private _viewUsers: ViewUser[] = [];
+
+  private onselecteds: ((user: UserInfo) => void)[] = [];
 
   constructor({ }: { users: UserInfo[], idKey: string, nameKey: string, avatarKey: string }) {
     // TODO:
@@ -35,15 +42,38 @@ export default class UserList {
     return element;
   }
 
-  setUsers(users: string[]) {
-
+  /**
+   * 更新用户列表
+   * @param list 用户列表
+   * @returns 返回当前实例
+   */
+  updateUsers(list: UserInfo[]): this {
+    this._users = list;
+    this._viewUsers = list.map((user) => {
+      let element = user.element;
+      if (!element) {
+        element = this.createUserItem(user);
+      }
+      element.addEventListener("click", () => {
+        this.onselecteds.forEach(fn => fn(user))
+      });
+      return { ...user, element };
+    });
+    return this;
   }
 
+
   open() {
-    this.element.style.display = "block";
+    this.element.style.opacity = "1";
+    this.element.style.pointerEvents = "auto";
   }
 
   close() {
-    this.element.style.display = "none";
+    this.element.style.opacity = "0";
+    this.element.style.pointerEvents = "none";
+  }
+
+  onSelectUser(fn: (user: UserInfo) => void) {
+    this.onselecteds.push(fn);
   }
 }

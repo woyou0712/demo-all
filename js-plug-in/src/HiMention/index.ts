@@ -39,7 +39,7 @@ class Mention {
   private _usersWdith = "200px";
   private _usersHeight = "200px";
   private _mentionColor = "#0080FF";
-  private _mentionUsers: MentionUser[] = [];
+  private _mentionUsers: ViewUser[] = [];
   private _users: UserInfo[] = [];
 
   private _queryStr = "";
@@ -136,7 +136,6 @@ class Mention {
       this._inputEvent()
     } else if (["Backspace", "Delete"].includes(e.code)) {
       const bool = this._wordDelete(e);
-      console.log(bool);
       if (bool) {
         e.preventDefault();
         this._onchange(); // 不触发默认行为，需要手动触发change事件
