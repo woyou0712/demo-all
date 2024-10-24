@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["styps.d.ts"]
+    }
+  },
+  "include": ["index.ts"]
+}
