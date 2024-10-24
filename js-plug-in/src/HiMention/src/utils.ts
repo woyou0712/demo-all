@@ -75,12 +75,7 @@ export const getRangeAt = (selection: Selection | null, index = 0): Range | null
   if (!selection) return null;
   const range = selection.getRangeAt(index);
   if (!range) return null;
-  // 如果当前光标不在P标签中，则将光标移动到P标签中
-  const currentP = getCurrentP(range);
-  if (currentP) {
-    return range;
-  }
-  return null;
+  return range;
 };
 
 export const createTextNode = (text = ""): Text => {

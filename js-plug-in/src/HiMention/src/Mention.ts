@@ -83,8 +83,14 @@ class Mention {
 
   private _onclick(e: MouseEvent) {
     if (e.target === this._editorEl) {
-      e.preventDefault();
-      this.focus();
+      setTimeout(() => {
+        const selection = getSelection();
+        const range = getRangeAt(selection);
+        if (range?.collapsed) {
+          e.preventDefault();
+          this.focus();
+        }
+      })
     }
   }
 
@@ -193,8 +199,7 @@ class Mention {
     const range = getRangeAt(selection);
     if (!range) return;
     // 判断是否有选中内容
-    const bool = range.startOffset !== range.endOffset || range.startContainer !== range.endContainer;
-    if (bool) {
+    if (!range.collapsed) {
       // 删除选中的内容
       range.deleteContents();
       // 获取开始位置所在的P标签
