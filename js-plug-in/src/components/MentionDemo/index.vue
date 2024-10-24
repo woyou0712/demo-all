@@ -6,14 +6,18 @@
         <div class="editor-content"></div>
         <div class="editor-footer">
           <!-- a标签在外部窗口打开 -->
-          <a href="https://www.npmjs.com/package/hi-mention" target="_blank"> 使用本插件 </a>
+          <a href="https://www.npmjs.com/package/hi-mention" target="_blank">
+            使用本插件
+          </a>
           <button @click="sendMessage">发送</button>
         </div>
       </div>
     </div>
     <div class="methods">
       <div class="users">
-        <div class="user-item" v-for="user in users" :key="user.id">{{ user.name }}({{ user.id }})</div>
+        <div class="user-item" v-for="user in users" :key="user.id">
+          {{ user.name }}({{ user.id }})
+        </div>
       </div>
       <div style="padding: 0 10px">
         <button @click="insertText">插入文本</button>
@@ -53,9 +57,9 @@ watch(
   () => vw.value,
   (v) => {
     if (v < 750) {
-      m.value?.userSelector.updateMedia("H5");
+      m.value?.userSelector?.setMedia("H5");
     } else {
-      m.value?.userSelector.updateMedia("PC");
+      m.value?.userSelector?.setMedia("PC");
     }
   }
 );
@@ -93,7 +97,10 @@ const focus = () => {
 const sendMessage = () => {
   if (!msg.value) return;
   pushMessage(msg.value, "self");
-  pushMessage(`欢迎使用本插件，使用过程中有任何问题欢迎加入QQ群参与讨论：<a href="https://qm.qq.com/q/LqSPY7LrGM" target="_blank">点击链接加入群聊【小妖非人类研究中心—前端】</a>`, "others");
+  pushMessage(
+    `欢迎使用本插件，使用过程中有任何问题欢迎加入QQ群参与讨论：<a href="https://qm.qq.com/q/LqSPY7LrGM" target="_blank">点击链接加入群聊【小妖非人类研究中心—前端】</a>`,
+    "others"
+  );
   m.value?.clear();
 };
 
@@ -140,7 +147,7 @@ const updateUsers = () => {
     { name: "唐僧", id: 103 },
     { name: "白龙马", id: 104 },
   ];
-  m.value?.userSelector.updateUsers(users.value);
+  m.value?.userSelector?.updateUsers(users.value);
 };
 </script>
 

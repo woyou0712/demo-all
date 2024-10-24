@@ -9,22 +9,24 @@ interface UserInfo {
 
 type MediaType = "H5" | "PC";
 
-interface MentionOption {
-  idKey?: string; // id字段
-  nameKey?: string; // 名称字段
-  avatarKey?: string; // 头像字段
-  pingyinKey?: string; // 拼音字段
+interface UserSelectorOptions {
+  users: UserInfo[];
+  idKey: string;
+  nameKey: string;
+  avatarKey: string;
+  pingyinKey: string;
+  media: MediaType;
+  usersWdith: string;
+  usersHeight: string;
+}
 
-  trigger?: string; // 触发字符
-  media?: MediaType; // 媒体类型
-  placeholder?: string;
-  placeholderColor?: string;
-  usersWdith?: string;
-  usersHeight?: string;
 
-  users?: UserInfo[];
 
-  mentionColor?: string;
+interface MentionOptions extends UserSelectorOptions {
+  trigger: string;
+  placeholder: string;
+  placeholderColor: string;
+  mentionColor: string;
 }
 
 interface ViewUser extends UserInfo {

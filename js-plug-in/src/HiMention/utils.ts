@@ -14,57 +14,51 @@ export const createElement = <K extends keyof HTMLElementTagNameMap>(type: K, { 
 /**
  * 获取当前光标所在的p标签
  */
-export const getCurrentP = (range: Range): HTMLElement | null => {
-  let currentP = range.commonAncestorContainer as HTMLElement;
+export const getCurrentP = (range: Range, type: "start" | "end" | "common" = "common"): HTMLElement | null => {
+  let currentP
+  if (type === "start") {
+    currentP = range.startContainer as HTMLElement;
+  } else if (type === "end") {
+    currentP = range.endContainer as HTMLElement;
+  } else {
+    currentP = range.commonAncestorContainer as HTMLElement;
+  }
   if (!currentP) return null;
   // 如果当前光标所在节点为根节点，则向下寻找p标签
   if (currentP.className?.includes(EDITOR_CLASS)) {
     currentP = currentP.childNodes[range.endOffset > 0 ? range.endOffset - 1 : 0] as HTMLElement;
     if (currentP?.className !== P_TAG_CLASS) return null;
     // 修正光标位置
-    range.setStart(currentP, range.startOffset);
-    range.setEnd(currentP, range.endOffset);
+    let index = range.endOffset > currentP.childNodes.length ? currentP.childNodes.length : range.endOffset;
+    if (type === "start") {
+      index = range.startOffset > currentP.childNodes.length ? currentP.childNodes.length : range.startOffset;
+      range.setStart(currentP, index);
+    } else if (type === "end") {
+      range.setEnd(currentP, index);
+    } else {
+      range.setStart(currentP, index);
+      range.setEnd(currentP, index);
+    }
   }
   for (let i = 0; i < 10 && currentP.className !== P_TAG_CLASS; i++) {
     currentP = currentP.parentElement as HTMLElement;
   }
   if (currentP?.className !== P_TAG_CLASS) return null;
-  // 如果子节点大于1的情况下，删除所有BR子节点
-  if (currentP.childNodes.length > 1) {
-    const brs = currentP.querySelectorAll("br");
-    brs.forEach((br) => br.remove());
+
+  if (type === "common") {
+    // 如果子节点大于1的情况下，删除所有BR子节点
+    if (currentP.childNodes.length > 1) {
+      const brs = currentP.querySelectorAll("br");
+      brs.forEach((br) => br.remove());
+    }
+    if (isEmptyElement(currentP)) {
+      currentP.innerHTML = "<br/>";
+    }
   }
   return currentP;
 };
 
-/**
- * 判断当前光标是否在p标签的末尾
- * @param currentP 当前光标所在的p标签
- */
-export const isCursorAtEnd = (range: Range, currentP: HTMLElement): boolean => {
-  // 如果当前光标坐在P表示是空的，则认为光标在末尾
-  if (isEmptyElement(currentP)) return true;
-  // 判断光标是否在当前P元素末尾
-  let isEnd = false;
-  // 获取当前P标签中的最后一个标签
-  const lastChild = currentP.lastChild as HTMLElement;
-  // 最后一个元素是有文本内容的文本节点，并且当前光标在文本节点末尾
-  if (lastChild?.nodeName === "#text" && lastChild?.textContent && lastChild === range.endContainer && range.endOffset === lastChild.textContent?.length) {
-    isEnd = true;
-  } else if (lastChild?.nodeName === "#text" && !lastChild?.textContent && currentP.childNodes.length - 1 === range.endOffset) {
-    // 最后一个标签为没有文本内容的文本节点，并且当前光标在最后一个标签之后
-    isEnd = true;
-  } else if (lastChild?.nodeName !== "#text" && currentP.childNodes.length === range.endOffset) {
-    // 如果最后一个标签不是文本节点
-    isEnd = true;
-  } else if (currentP.childNodes.length <= 1 && currentP.childNodes[0]?.nodeName === "BR") {
-    // 如果只有一个换行符则认为光标在末尾
-    isEnd = true;
-  } else if (currentP.childNodes.length && lastChild === range.endContainer && currentP.childNodes.length === range.endOffset) {
-    isEnd = true;
-  }
-  return isEnd;
-};
+
 
 /**
  * 判断一个标签是否为空标签
@@ -101,3 +95,70 @@ export const createDocumentFragment = (el?: HTMLElement | DocumentFragment): Doc
   }
   return fr;
 };
+
+
+/**
+ * 将光标移动到P标签的开头
+ */
+export const moveCursorToStart = (range: Range, currentP: HTMLElement | Element | Node): void => {
+  const firstChild = currentP.firstChild;
+  if (firstChild?.nodeName === "#text") {
+    range.setStart(firstChild, 0);
+    range.setEnd(firstChild, 0);
+  } else {
+    range.setStart(currentP, 0);
+    range.setEnd(currentP, 0);
+  }
+}
+/**
+ * 将光标移动到P标签的末尾
+ */
+export const moveCursorToEnd = (range: Range, currentP: HTMLElement | Element | Node): void => {
+  const lastChild = currentP.lastChild;
+  if (lastChild?.nodeName === "#text") {
+    range.setStart(lastChild, lastChild.textContent?.length || 0);
+    range.setEnd(lastChild, lastChild.textContent?.length || 0);
+  } else {
+    range.setStart(currentP, currentP.childNodes.length);
+    range.setEnd(currentP, currentP.childNodes.length);
+  }
+}
+
+/**
+ * 判断当前光标是否在p标签的末尾
+ */
+export const isCursorAtEnd = (range: Range, currentP: HTMLElement): boolean => {
+  // 如果当前光标坐在P表示是空的，则认为光标在末尾
+  if (isEmptyElement(currentP)) return true;
+  // 获取当前P标签中的最后一个标签
+  const lastChild = currentP.lastChild;
+  if (!lastChild) return true;
+  const endContainer = range.endContainer; // 获取光标所在标签
+  if (endContainer === currentP) {
+    // 如果光标直接在P标签上
+    if (range.endOffset === currentP.childNodes.length) return true
+    if (lastChild.nodeName === "#text" && !lastChild.textContent && range.endOffset === currentP.childNodes.length - 1) return true
+  } else if (endContainer === lastChild) {
+    // 如果光标在最后一个标签上
+    if (lastChild.nodeName === "#text" && range.endOffset === Number(lastChild.textContent?.length)) return true
+    if (lastChild.nodeName !== "#text" && range.endOffset === currentP.childNodes.length) return true
+  }
+  return false;
+};
+
+/**
+ * 判断当前光标是否在p标签的开头
+ */
+export const isCursorAtStart = (range: Range, currentP: HTMLElement): boolean => {
+  // 如果当前光标坐在P表示是空的，在开头
+  if (isEmptyElement(currentP)) return true;
+  // 获取当前P标签中的第一个标签
+  const firstChild = currentP.firstChild;
+  if (!firstChild) return true;
+  const startContainer = range.startContainer; // 获取光标所在标签
+  // 如果光标直接在P标签上
+  if (startContainer === currentP && range.startOffset === 0) return true
+  // 如果光标在第一个标签上
+  if (startContainer === firstChild && range.startOffset === 0) return true
+  return false
+}

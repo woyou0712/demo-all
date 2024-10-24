@@ -1,61 +1,52 @@
+import { defaultUserSelectorOptions } from "./const";
 import { createDocumentFragment, createElement } from "./utils";
 
-export interface UserSelectorOptions {
-  users: UserInfo[];
-  idKey: string;
-  nameKey: string;
-  avatarKey: string;
-  pingyinKey: string;
-  media: MediaType;
-  usersWdith: string;
-  usersHeight: string;
-}
-
-export const defaultUserSelectorOptions = (): UserSelectorOptions => ({
-  users: [],
-  idKey: "id",
-  nameKey: "name",
-  avatarKey: "avatar",
-  pingyinKey: "pingyin",
-  media: "PC",
-  usersWdith: "200px",
-  usersHeight: "200px",
-});
-
-interface UserSelectorPosition {
-  H5: "bottom" | "top";
-  PC: {
-    left: number;
-    top: number;
-    right: number;
-    bottom: number;
-    positionY: "top" | "bottom";
-    positionX: "left" | "right";
-  };
-}
 
 export default class UserSelector {
   private _rootEl: HTMLElement;
   element = createElement("div", { className: "hi-mention-user-selector" });
 
+  private _status: "open" | "close" = "close";
+
+  get status() {
+    return this._status;
+  }
+
+  set status(status: "open" | "close") {
+    this._status = status;
+    if (status === "open") {
+      this.element.classList.add("open");
+    } else {
+      this.element.classList.remove("open");
+    }
+  }
+
   options: UserSelectorOptions = defaultUserSelectorOptions();
 
-  users: UserInfo[] = [];
 
   private _viewUsers: ViewUser[] = [];
 
   private onselecteds: ((user: UserInfo) => void)[] = [];
 
-  constructor(el: Element | HTMLElement) {
+  constructor(el: Element | HTMLElement, options: Partial<UserSelectorOptions>) {
     this._rootEl = el as HTMLElement;
+    this.options = Object.assign(this.options, options);
+    this.initUsersEl()
+    this.setMedia()
     this._rootEl.appendChild(this.element);
   }
 
-  setOptions(options: UserSelectorOptions) {
-    this.options = { ...this.options, ...options };
-    this.element.style.width = this.options.usersWdith;
-    this.element.style.maxHeight = this.options.usersHeight;
-    this.updateUsers(this.options.users);
+  private initUsersEl() {
+    this._viewUsers = this.options.users.map((user) => {
+      let element = user.element;
+      if (!element) {
+        element = this.createUserItem(user);
+      }
+      element.addEventListener("click", () => {
+        this.onselecteds.forEach((fn) => fn(user));
+      });
+      return { ...user, element };
+    });
   }
 
   /**
@@ -81,7 +72,34 @@ export default class UserSelector {
     return element;
   }
 
-  updateMedia(media: MediaType = this.options.media) {
+  protected getCursorPosition(): { left: number; top: number; right: number; bottom: number; positionY: "top" | "bottom"; positionX: "left" | "right" } | null {
+    const selection = getSelection();
+    if (!selection) return null;
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const { left, top, right, bottom } = this._rootEl.getBoundingClientRect();
+      // 根据光标在屏幕上的位置
+      const positionY = window.innerHeight - bottom > top ? "top" : "bottom";
+      const positionX = right - rect.right > rect.left - left ? "left" : "right";
+      // 返回坐标
+      const l = rect.left - left;
+      const t = rect.top - top;
+      const r = right - rect.right;
+      const b = bottom - rect.bottom;
+      return { left: l, top: t + 22, bottom: b + 22, right: r, positionY, positionX };
+    }
+    return null;
+  }
+
+  protected getH5Position(): "top" | "bottom" {
+    const { top, bottom } = this._rootEl.getBoundingClientRect();
+    const positionY = window.innerHeight - bottom < top ? "bottom" : "top";
+    return positionY;
+  }
+
+
+  setMedia(media: MediaType = this.options.media) {
     this.options.media = media;
     const element = this.element;
     if (media === "H5") {
@@ -91,23 +109,17 @@ export default class UserSelector {
       element.classList.remove("h5");
     }
   }
+
+
+
   /**
    * 更新用户列表
    * @param list 用户列表
    * @returns 返回当前实例
    */
   updateUsers(list: UserInfo[]): this {
-    this.users = list;
-    this._viewUsers = list.map((user) => {
-      let element = user.element;
-      if (!element) {
-        element = this.createUserItem(user);
-      }
-      element.addEventListener("click", () => {
-        this.onselecteds.forEach((fn) => fn(user));
-      });
-      return { ...user, element };
-    });
+    this.options.users = list;
+    this.initUsersEl();
     return this;
   }
   /**
@@ -138,10 +150,10 @@ export default class UserSelector {
   /**
    * 设置用户选择器的位置
    */
-  setPosition<T extends keyof UserSelectorPosition>(media: T, position: UserSelectorPosition[T]) {
+  setPosition() {
     const element = this.element;
-    if (media === "H5") {
-      const positionY = position as UserSelectorPosition["H5"];
+    if (this.options.media === "H5") {
+      const positionY = this.getH5Position()
       if (positionY) {
         element.style[positionY] = "100%";
         if (positionY === "top") {
@@ -151,7 +163,7 @@ export default class UserSelector {
         }
       }
     } else {
-      const cursorPosition = position as UserSelectorPosition["PC"];
+      const cursorPosition = this.getCursorPosition()
       if (cursorPosition) {
         element.style[cursorPosition.positionY] = `${cursorPosition[cursorPosition.positionY]}px`;
         element.style[cursorPosition.positionX] = `${cursorPosition[cursorPosition.positionX]}px`;
@@ -163,16 +175,17 @@ export default class UserSelector {
     }
   }
 
-  open() {
-    this.element.style.opacity = "1";
-    this.element.style.transform = "scale(1) translateY(0)";
-    this.element.style.pointerEvents = "auto";
+  open(query: string) {
+    const bool = this.viewUserItems(query);
+    if (!bool) return
+    this.setPosition();
+    if (this.status === "open") return
+    this.status = "open";
   }
 
   close() {
-    this.element.style.opacity = "0";
-    this.element.style.transform = "scale(0.8) translateY(10%)";
-    this.element.style.pointerEvents = "none";
+    if (this.status === "close") return
+    this.status = "close";
   }
 
   onSelectUser(fn: (user: UserInfo) => void) {
