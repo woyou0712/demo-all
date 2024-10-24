@@ -1,5 +1,6 @@
 import { defaultUserSelectorOptions } from "./const";
 import { createDocumentFragment, createElement } from "./utils";
+import { UserInfo, UserSelectorOptions, ViewUser } from "./types";
 
 
 export default class UserSelector {

@@ -1,4 +1,4 @@
-interface UserInfo {
+export interface UserInfo {
   id?: string | number;
   name?: string;
   avatar?: string;
@@ -7,9 +7,9 @@ interface UserInfo {
   [key: string]: any;
 }
 
-type MediaType = "H5" | "PC";
+export type MediaType = "H5" | "PC";
 
-interface UserSelectorOptions {
+export interface UserSelectorOptions {
   users: UserInfo[];
   idKey: string;
   nameKey: string;
@@ -20,20 +20,18 @@ interface UserSelectorOptions {
   usersHeight: string;
 }
 
-
-
-interface MentionOptions extends UserSelectorOptions {
+export interface MentionOptions extends UserSelectorOptions {
   trigger: string;
   placeholder: string;
   placeholderColor: string;
   mentionColor: string;
 }
 
-interface ViewUser extends UserInfo {
+export interface ViewUser extends UserInfo {
   element: HTMLElement;
 }
 
-interface EventsType {
+export interface EventsType {
   click?: (e?: MouseEvent) => void;
   focus?: (e?: FocusEvent) => void;
   blur?: (e?: FocusEvent) => void;
@@ -44,7 +42,7 @@ interface EventsType {
   "mention-user"?: (user?: UserInfo) => void;
 }
 
-interface OnEvents {
+export interface OnEvents {
   clicks: ((e?: MouseEvent) => void)[];
   inputs: ((e?: Event) => void)[];
   focuses: ((e?: FocusEvent) => void)[];

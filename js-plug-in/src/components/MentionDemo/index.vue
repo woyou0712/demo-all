@@ -36,8 +36,8 @@
 import { onMounted, ref, watch } from "vue";
 import ChatArea from "../ChatArea/index.vue";
 
-import Mention from "../../HiMention";
-import "../../HiMention/index.css";
+import HiMention from "../../hi-mention";
+import "../../hi-mention/index.css";
 
 const vw = ref(window.innerWidth);
 window.onresize = () => {
@@ -51,7 +51,7 @@ const pushMessage = (html: string, userTag: "self" | "others") => {
 
 const msg = ref("");
 
-const m = ref<Mention>();
+const m = ref<HiMention>();
 
 watch(
   () => vw.value,
@@ -85,7 +85,7 @@ const users = ref<{ name: string; id: number }[]>([
 ]);
 
 onMounted(() => {
-  m.value = new Mention(".editor-content", {
+  m.value = new HiMention(".editor-content", {
     users: users.value,
     media: vw.value < 750 ? "H5" : "PC",
   }).on("change", (d) => (msg.value = d?.html || ""));

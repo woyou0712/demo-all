@@ -9,9 +9,6 @@
     "declaration": true,
     "outDir": "dist",
     "baseUrl": ".",
-    "paths": {
-      "*": ["styps.d.ts"]
-    }
   },
   "include": ["index.ts"]
 }

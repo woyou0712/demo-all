@@ -1,5 +1,3 @@
-@use "UserSelector.scss";
-
 section.hi-mention-body {
   position: relative;
   width: 100%;
@@ -12,7 +10,7 @@ section.hi-mention-body {
     box-sizing: border-box;
   }
 
-  & > div.hi-mention-editor {
+  &>div.hi-mention-editor {
     width: 100%;
     height: 100%;
     position: relative;
@@ -44,7 +42,7 @@ section.hi-mention-body {
     }
   }
 
-  & > div.hi-mention-placeholder {
+  &>div.hi-mention-placeholder {
     position: absolute;
     width: 100%;
     top: 0;

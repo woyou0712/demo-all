@@ -1,6 +1,7 @@
 import { defaultMentionOptions, EDITOR_CLASS, EMPTY_INPUT_CONTENT, P_TAG_CLASS } from "./const";
 import UserSelector from "./UserSelector";
 import { createElement, createTextNode, getCurrentP, getRangeAt, getSelection, isCursorAtEnd, isCursorAtStart, isEmptyElement, moveCursorToEnd, moveCursorToStart } from "./utils";
+import { OnEvents, MentionOptions, UserInfo, EventsType } from "./types"
 
 class Mention {
   private _rootEl: HTMLElement;

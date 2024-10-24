@@ -10,7 +10,7 @@ div.hi-mention-user-selector {
   z-index: 999;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.3s;
+  transition: transform 300ms, opacity 300ms;
   transform: scale(0.9);
 
   &.open {

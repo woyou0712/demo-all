@@ -1,3 +1,4 @@
+import { MentionOptions, UserSelectorOptions } from "./types";
 
 // 编辑器类名
 export const EDITOR_CLASS = "hi-mention-editor";
