@@ -24,7 +24,7 @@ class Mention {
   private _inputRange?: Range;
   private _inputSelection?: Selection;
 
-  private options: MentionOptions = defaultMentionOptions();
+  protected options: MentionOptions = defaultMentionOptions();
 
   userSelector?: UserSelector;
 
@@ -582,7 +582,7 @@ class Mention {
     const { trigger, placeholder, placeholderColor, mentionColor, users, idKey, nameKey, avatarKey, pingyinKey, media, usersWdith, usersHeight, } = options;
     if (placeholder) this._placeholderEl.innerText = placeholder;
     if (placeholderColor) this._placeholderEl.style.color = placeholderColor;
-    
+
     return this;
   }
 
@@ -783,7 +783,7 @@ class Mention {
   }
 
   /**
- * 打开用户列表
+ * 打开用户选择器
  * @param query 查询字符串
  * @returns
  */
