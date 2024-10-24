@@ -19,7 +19,8 @@ class Mention {
   };
 
   private _changetimeout?: any;
-  private _blurtimeout?: any;
+
+  protected blurtimeout?: any;
 
   private _inputRange?: Range;
   private _inputSelection?: Selection;
@@ -89,8 +90,8 @@ class Mention {
 
   private _onblur(e: FocusEvent) {
     this._events["blurs"].forEach((fn) => fn(e));
-    clearTimeout(this._blurtimeout);
-    this._blurtimeout = setTimeout(() => {
+    clearTimeout(this.blurtimeout);
+    this.blurtimeout = setTimeout(() => {
       this.closeUserSelector();
     }, 200);
   }
@@ -748,7 +749,7 @@ class Mention {
   protected initUserSelector() {
     this.userSelector = new UserSelector(this._rootEl, this.options);
     // 监听鼠标在用户列表中按下事件，防止鼠标点击用户列表时，触发编辑器失去焦点事件
-    this.userSelector.element.onmousedown = () => setTimeout(() => clearTimeout(this._blurtimeout), 100);
+    this.userSelector.element.onmousedown = () => setTimeout(() => clearTimeout(this.blurtimeout), 100);
     this.userSelector.onSelectUser((user) => {
       this.mentionUser(user);
     });
