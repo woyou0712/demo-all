@@ -32,7 +32,6 @@ export interface ViewUser extends UserInfo {
 }
 
 export interface EventsType {
-  click?: (e?: MouseEvent) => void;
   focus?: (e?: FocusEvent) => void;
   blur?: (e?: FocusEvent) => void;
   keydown?: (e?: KeyboardEvent) => void;
@@ -43,7 +42,6 @@ export interface EventsType {
 }
 
 export interface OnEvents {
-  clicks: ((e?: MouseEvent) => void)[];
   inputs: ((e?: Event) => void)[];
   focuses: ((e?: FocusEvent) => void)[];
   blurs: ((e?: FocusEvent) => void)[];

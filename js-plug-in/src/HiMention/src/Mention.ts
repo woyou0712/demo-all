@@ -9,7 +9,6 @@ class Mention {
   private _editorEl = createElement("div", { className: EDITOR_CLASS });
   private _placeholderEl = createElement("div", { className: "hi-mention-placeholder" });
   private _events: OnEvents = {
-    clicks: [],
     blurs: [],
     focuses: [],
     changes: [],
@@ -84,9 +83,8 @@ class Mention {
   private _onclick(e: MouseEvent) {
     if (e.target === this._editorEl) {
       e.preventDefault();
-      this._editorEl.focus();
+      this.focus();
     }
-    this._events["clicks"].forEach((fn) => fn(e));
   }
 
   private _onblur(e: FocusEvent) {
