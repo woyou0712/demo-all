@@ -30,9 +30,7 @@ export default class UserSelector {
 
   constructor(el: Element | HTMLElement, options: Partial<UserSelectorOptions>) {
     this._rootEl = el as HTMLElement;
-    this.options = Object.assign(this.options, options);
-    this.initUsersEl()
-    this.setMedia()
+    this.setOptions(options);
     this._rootEl.appendChild(this.element);
   }
 
@@ -99,35 +97,15 @@ export default class UserSelector {
   }
 
 
-  setMedia(media: MediaType = this.options.media) {
-    this.options.media = media;
-    const element = this.element;
-    if (media === "H5") {
-      element.classList.add("h5");
-      element.style.left = "0";
-    } else {
-      element.classList.remove("h5");
-    }
-  }
 
 
 
-  /**
-   * 更新用户列表
-   * @param list 用户列表
-   * @returns 返回当前实例
-   */
-  updateUsers(list: UserInfo[]): this {
-    this.options.users = list;
-    this.initUsersEl();
-    return this;
-  }
   /**
    * 根据查询字符串显示用户列表项
    * @param query
    * @returns
    */
-  viewUserItems(query: string) {
+  protected viewUserItems(query: string) {
     const element = this.element;
     element.innerHTML = "";
     const box = createDocumentFragment();
@@ -150,7 +128,7 @@ export default class UserSelector {
   /**
    * 设置用户选择器的位置
    */
-  setPosition() {
+  protected setPosition() {
     const element = this.element;
     if (this.options.media === "H5") {
       const positionY = this.getH5Position()
@@ -173,6 +151,26 @@ export default class UserSelector {
         if (cursorPosition.positionX === "left") element.style.right = "initial";
       }
     }
+  }
+
+  setOptions(options: Partial<UserSelectorOptions>) {
+    this.options = { ...this.options, ...options }
+    const { users, idKey, nameKey, avatarKey, pingyinKey, media, usersWdith, usersHeight, } = options;
+    if (users) this.initUsersEl();
+    const element = this.element;
+    if (media === "H5") {
+      element.classList.add("h5");
+      element.style.left = "0";
+    } else if (media === "PC") {
+      element.classList.remove("h5");
+    }
+    if (this.options.media === "PC") {
+      element.style.width = usersWdith ? usersWdith : this.options.usersWdith;
+    } else if (this.options.media === "H5") {
+      element.style.width = "100%";
+    }
+    if (usersHeight) element.style.maxHeight = usersHeight;
+    return this;
   }
 
   open(query: string) {

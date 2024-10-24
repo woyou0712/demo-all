@@ -57,9 +57,9 @@ watch(
   () => vw.value,
   (v) => {
     if (v < 750) {
-      m.value?.userSelector?.setMedia("H5");
+      m.value?.userSelector?.setOptions({ media: "H5" });
     } else {
-      m.value?.userSelector?.setMedia("PC");
+      m.value?.userSelector?.setOptions({ media: "PC" });
     }
   }
 );
@@ -147,7 +147,7 @@ const updateUsers = () => {
     { name: "唐僧", id: 103 },
     { name: "白龙马", id: 104 },
   ];
-  m.value?.userSelector?.updateUsers(users.value);
+  m.value?.userSelector?.setOptions({ users: users.value });
 };
 </script>
 

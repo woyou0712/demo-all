@@ -24,7 +24,7 @@ class Mention {
   private _inputRange?: Range;
   private _inputSelection?: Selection;
 
-  options: MentionOptions = defaultMentionOptions();
+  private options: MentionOptions = defaultMentionOptions();
 
   userSelector?: UserSelector;
 
@@ -47,6 +47,7 @@ class Mention {
 
     this._initElement();
     this._initEvent();
+
     this.initUserSelector();
   }
 
@@ -191,8 +192,23 @@ class Mention {
     const selection = getSelection();
     const range = selection?.getRangeAt(0);
     if (!range) return;
-    // 删除选中的内容
-    range.deleteContents();
+    // 判断是否有选中内容
+    const bool = range.startOffset !== range.endOffset || range.startContainer !== range.endContainer;
+    if (bool) {
+      // 删除选中的内容
+      range.deleteContents();
+      // 获取开始位置所在的P标签
+      const currentP = getCurrentP(range, "start");
+      // 获取结束位置所在P标签
+      const nextP = getCurrentP(range, "end");
+      if (!currentP || !nextP) return;
+      // 如果开始位置和结束位置不在同一个P标签中
+      if (currentP !== nextP) {
+        // 将光标移动到结束P标签的开头
+        moveCursorToStart(range, nextP);
+        return;
+      }
+    }
     // 获取当前所在的p标签
     let currentP = getCurrentP(range);
     if (!currentP) return;
@@ -561,7 +577,18 @@ class Mention {
     return element;
   }
 
+  setOptions(options: Partial<MentionOptions>): this {
+    this.options = { ...this.options, ...options };
+    const { trigger, placeholder, placeholderColor, mentionColor, users, idKey, nameKey, avatarKey, pingyinKey, media, usersWdith, usersHeight, } = options;
+    if (placeholder) this._placeholderEl.innerText = placeholder;
+    if (placeholderColor) this._placeholderEl.style.color = placeholderColor;
+    
+    return this;
+  }
 
+  getOptions(): MentionOptions {
+    return { ...this.options };
+  }
 
   /**
    * 事件监听器
