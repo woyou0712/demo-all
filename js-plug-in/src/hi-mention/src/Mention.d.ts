@@ -1,56 +1,9 @@
 import UserSelector from "./UserSelector";
 import { MentionOptions, UserInfo, EventsType } from "./types";
 declare class Mention {
-    private _rootEl;
-    private _editorBody;
-    private _editorEl;
-    private _placeholderEl;
-    private _events;
-    private _changetimeout?;
-    private _blurtimeout?;
-    private _inputRange?;
-    private _inputSelection?;
     protected options: MentionOptions;
     userSelector?: UserSelector;
-    private _queryStr;
     constructor(el: Element | HTMLElement | string, option?: Partial<MentionOptions>);
-    private _initElement;
-    private _initEvent;
-    private _onclick;
-    private _onblur;
-    private _onfocus;
-    private _onkeydown;
-    private _onkeyup;
-    private _oninput;
-    private _oncut;
-    private _onpaste;
-    private _onchange;
-    private _inputEvent;
-    /**
-     * 内容换行
-     */
-    private _wordWrap;
-    /**
-     * 删除键
-     * @param range 当前光标位置
-     * @param currentP 当前光标所在的P标签
-     * @returns
-     */
-    private _onDelete;
-    /**
-     * 退格键
-     * @param range 当前光标位置
-     * @param currentP 当前光标所在的P标签
-     * @returns
-     */
-    private _onBackspace;
-    /**
-     * 删除内容
-     * @param e 键盘事件
-     * @returns
-     */
-    private _wordDelete;
-    private _isCursorInEditor;
     /**
      * 创建用户选项元素
      * @param user 用户信息

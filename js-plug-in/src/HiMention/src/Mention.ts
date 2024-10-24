@@ -555,29 +555,6 @@ class Mention {
     return range.commonAncestorContainer === this._editorEl || this._editorEl.contains(range.commonAncestorContainer);
   }
 
-  /**
-   * 创建用户选项元素
-   * @param user 用户信息
-   * @returns 用户列表中的选项元素
-   */
-  protected createUserElement(user: UserInfo): HTMLElement {
-    if (user.element) return user.element;
-    const element = createElement("div", { className: "hi-mention-user-item" });
-    const { nameKey, avatarKey } = this.options;
-    const [name = "", avatar = ""] = [user[nameKey], user[avatarKey]];
-    const left = createElement("div", { className: "hi-mention-user-item-left" });
-    if (avatar) {
-      const img = createElement("img");
-      img.src = avatar;
-      left.appendChild(img);
-    }
-    const right = createElement("div", { className: "hi-mention-user-item-right" });
-    right.innerText = name;
-    element.appendChild(left);
-    element.appendChild(right);
-    return element;
-  }
-
   setOptions(options: Partial<MentionOptions>): this {
     this.options = { ...this.options, ...options };
     const { trigger, placeholder, placeholderColor, mentionColor, users, idKey, nameKey, avatarKey, pingyinKey, media, usersWdith, usersHeight, } = options;

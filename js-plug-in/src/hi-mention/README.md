@@ -14,7 +14,7 @@ npm install hi-mention --save
 ## 引入
 
 ```js
-import Mention from "hi-mention";
+import HiMention from "hi-mention";
 ```
 
 ## VUE 使用示例
@@ -27,12 +27,12 @@ import Mention from "hi-mention";
 <script lang="ts" setup>
   import { onMounted } from "vue";
   // 引入插件
-  import Mention from "hi-mention";
+  import HiMention from "hi-mention";
   // 引入插件样式
   import "hi-mention/index.css";
 
   onMounted(() => {
-    new Mention(".editor-content", {
+    new HiMention(".editor-content", {
       users: [
         { name: "张三", id: 1 },
         { name: "李四", id: 2 },
@@ -72,16 +72,17 @@ import Mention from "hi-mention";
 | 参数               | 说明                                          | 类型          | 默认值    |
 | ------------------ | --------------------------------------------- | ------------- | --------- |
 | `trigger`          | 触发字符                                      | `string`      | `@`       |
-| `media`            | 媒体类型（`PC` 和 `H5` 的用户列表展示有差异） | `PC`/`H5`     | `PC`      |
 | `placeholder`      | 占位符                                        | `string`      | `请输入`  |
 | `placeholderColor` | 占位符颜色                                    | `string`      | `#aaa`    |
-| `usersWdith`       | 用户列表宽度（`media`=`PC`时有效）            | `string`      | `200px`   |
-| `usersHeight`      | 用户列表最大高度                              | `string`      | `200px`   |
+| `mentionColor`     | 提及用户颜色                                  | `string`      | `#0090FF`    |
 | `users`            | 用户列表                                      | `Array<User>` | `[]`      |
+| `media`            | 媒体类型（`PC` 和 `H5` 的用户列表展示有差异） | `PC`/`H5`     | `PC`      |
 | `idKey`            | `User`对象`id`字段(该字段支持`@搜索`)         | `string`      | `id`      |
 | `nameKey`          | `User`对象`name`字段(该字段支持`@搜索`)       | `string`      | `name`    |
 | `pingyinKey`       | `User`对象`pingyin`字段(该字段支持`@搜索`)    | `string`      | `pingyin` |
 | `avatarKey`        | `User`对象`avatar`字段                        | `string`      | `avatar`  |
+| `usersWdith`       | 用户列表宽度（`media`=`PC`时有效）            | `string`      | `200px`   |
+| `usersHeight`      | 用户列表最大高度                              | `string`      | `200px`   |
 
 ## API
 
@@ -133,12 +134,12 @@ import Mention from "hi-mention";
 
 ```javascript
 // 引入插件
-import Mention from "hi-mention";
+import HiMention from "hi-mention";
 // 引入插件样式
 import "hi-mention/index.css";
 
-// 创建自定义的 Mention 组件
-class MyMention extends Mention {
+// 创建自定义的 HiMention 组件
+class MyMention extends HiMention {
   constructor(props) {
     super(props);
   }
