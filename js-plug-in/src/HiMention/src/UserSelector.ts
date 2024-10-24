@@ -1,5 +1,5 @@
 import { defaultUserSelectorOptions } from "./const";
-import { createDocumentFragment, createElement } from "./utils";
+import { createDocumentFragment, createElement, getRangeAt } from "./utils";
 import { UserInfo, UserSelectorOptions, ViewUser } from "./types";
 
 
@@ -75,7 +75,8 @@ export default class UserSelector {
     const selection = getSelection();
     if (!selection) return null;
     if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
+      const range = getRangeAt(selection);
+      if (!range) return null;
       const rect = range.getBoundingClientRect();
       const { left, top, right, bottom } = this._rootEl.getBoundingClientRect();
       // 根据光标在屏幕上的位置

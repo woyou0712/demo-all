@@ -190,7 +190,7 @@ class Mention {
   private _wordWrap() {
     // 获取当前光标位置f
     const selection = getSelection();
-    const range = selection?.getRangeAt(0);
+    const range = getRangeAt(selection);
     if (!range) return;
     // 判断是否有选中内容
     const bool = range.startOffset !== range.endOffset || range.startContainer !== range.endContainer;
@@ -504,7 +504,7 @@ class Mention {
     }
     const selection = getSelection();
     if (!selection) return false;
-    const range = selection.getRangeAt(0);
+    const range = getRangeAt(selection);
     if (!range) return false;
     // 如果开始光标和结束光标不一致，则删除选中内容
     if (range.startOffset !== range.endOffset || range.startContainer !== range.endContainer) {
@@ -549,9 +549,9 @@ class Mention {
   private _isCursorInEditor() {
     const selection = getSelection();
     if (!selection?.anchorNode) return false;
-    const range = selection.getRangeAt(0);
-    if (!range.commonAncestorContainer) return false;
-    return range.commonAncestorContainer === this._editorEl || this._editorEl.contains(range.commonAncestorContainer);
+    const range = getRangeAt(selection);
+    if (!range?.commonAncestorContainer) return false;
+    return range?.commonAncestorContainer === this._editorEl || this._editorEl.contains(range.commonAncestorContainer);
   }
 
   setOptions(options: Partial<MentionOptions>): this {
@@ -669,13 +669,13 @@ class Mention {
   insertText(text: string): this {
     if (!this._isCursorInEditor()) return this;
     const selection = getSelection();
-    if (!selection) return this;
-    const range = selection.getRangeAt(0);
+    const range = getRangeAt(selection);
+    if (!range) return this;
     range.insertNode(createTextNode(text));
     this._onchange();
     range.collapse(false);
-    selection.removeAllRanges();
-    selection.addRange(range);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
     return this;
   }
 
@@ -687,14 +687,14 @@ class Mention {
   insertHtml(html: Element): this {
     if (!this._isCursorInEditor()) return this;
     const selection = getSelection();
-    if (!selection) return this;
-    const range = selection.getRangeAt(0);
+    const range = getRangeAt(selection);
+    if (!range) return this;
     html.setAttribute("contenteditable", "false");
     range.insertNode(html);
     this._onchange();
     range.collapse(false);
-    selection.removeAllRanges();
-    selection.addRange(range);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
     return this;
   }
 
