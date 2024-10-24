@@ -17,6 +17,13 @@ npm install hi-mention --save
 import HiMention from "hi-mention";
 ```
 
+## 使用
+
+```javascript
+// options非必要参数，可根据需要自行调整
+new HiMention(element, options);
+```
+
 ## VUE 使用示例
 
 ```html
@@ -67,14 +74,14 @@ import HiMention from "hi-mention";
 </style>
 ```
 
-## 参数
+## Options 属性
 
-| 参数               | 说明                                          | 类型          | 默认值    |
+| 属性名             | 说明                                          | 类型          | 默认值    |
 | ------------------ | --------------------------------------------- | ------------- | --------- |
 | `trigger`          | 触发字符                                      | `string`      | `@`       |
 | `placeholder`      | 占位符                                        | `string`      | `请输入`  |
 | `placeholderColor` | 占位符颜色                                    | `string`      | `#aaa`    |
-| `mentionColor`     | 提及用户颜色                                  | `string`      | `#0090FF`    |
+| `mentionColor`     | 提及用户颜色                                  | `string`      | `#0090FF` |
 | `users`            | 用户列表                                      | `Array<User>` | `[]`      |
 | `media`            | 媒体类型（`PC` 和 `H5` 的用户列表展示有差异） | `PC`/`H5`     | `PC`      |
 | `idKey`            | `User`对象`id`字段(该字段支持`@搜索`)         | `string`      | `id`      |
@@ -88,16 +95,16 @@ import HiMention from "hi-mention";
 
 | 方法          | 说明                             | 类型                                         | 备注 |
 | ------------- | -------------------------------- | -------------------------------------------- | ---- |
+| `setOptions`  | 设置`options`属性                | `(options: Partial<MentionOptions>)=>this`   | -    |
+| `getOptions`  | 获取`options`属性                | `()=>MentionOptions`                         | -    |
 | `on`          | 监听事件                         | `(key:EventType,fn:(data?:any)=>void)=>this` | -    |
-| `updateUsers` | 更新用户列表                     | `(users:Array<User>)=>this`                  | -    |
-| `updateMedia` | 更新媒体类型                     | `(media:"PC"/"H5")=>this`                    | -    |
+| `mentionUser` | 提及用户                         | `(user:User)=>this`                          | -    |
 | `clear`       | 清空输入框                       | `()=>this`                                   | -    |
 | `insertText`  | 在光标位置插入文本内容           | `(text:string)=>this`                        | -    |
 | `insertHtml`  | 在光标位置插入 HTML 内容         | `(html:Element)=>this`                       | -    |
 | `focus`       | 获取焦点、将光标移动到输入框末尾 | `()=>this`                                   | -    |
 | `getData`     | 获取输入框内容                   | `()=>{html:string,text:string}`              | -    |
 | `getMentions` | 获取输入框内提及的用户对象列表   | `()=>Array<User>`                            | -    |
-| `mentionUser` | 提及用户                         | `(user:User)=>this`                          | -    |
 
 ### EventType
 
@@ -123,34 +130,50 @@ import HiMention from "hi-mention";
 | `avatar`  | 否   | 头像                                                 | `string`  |
 | `element` | 否   | 用户列表中展示的元素，若不提供该字段，则使用默认样式 | `Element` |
 
-## 允许子类继承重写方法
+## 自定义用户列表
 
-| 接口名              | 说明                  | 类型                   | 备注                                      |
-| ------------------- | --------------------- | ---------------------- | ----------------------------------------- |
-| `createUserElement` | 创建用户选项`Element` | `(user:User)=>Element` | -                                         |
-| `openUserList`      | 打开用户列表          | `(query:User)=>this`   | `query`:为用户输入`@`时后面跟的查询字符串 |
+- 如果内置用户列表无法满足需求，可以通过继承 HiMention 组件，以下方法来实现自定义用户列表
+
+### HiMention 接口
+
+| 接口名              | 说明             | 类型                 | 备注                                      |
+| ------------------- | ---------------- | -------------------- | ----------------------------------------- |
+| `initUserSelector`  | 初始化用户选择器 | `()=>void`           | -                                         |
+| `closeUserSelector` | 关闭用户选择器   | `()=>void`           | -                                         |
+| `openUserSelector`  | 打开用户列表     | `(query:User)=>void` | `query`:为用户输入`@`时后面跟的查询字符串 |
+
+### HiUserSelector 接口
+
+| 接口名           | 说明                  | 类型                   | 备注 |
+| ---------------- | --------------------- | ---------------------- | ---- |
+| `open`           | 打开用户列表          | `(query:string)=>void` | -    |
+| `close`          | 关闭用户列表          | `()=>void`             | -    |
+| `createUserItem` | 创建用户选项`Element` | `(user:User)=>Element` | -    |
 
 - 继承示例
 
 ```javascript
 // 引入插件
-import HiMention from "hi-mention";
+import HiMention, { HiUserSelector } from "hi-mention";
 // 引入插件样式
 import "hi-mention/index.css";
 
-// 创建自定义的 HiMention 组件
-class MyMention extends HiMention {
+// 创建自定义用户选择器
+class MyHiUserSelector extends HiUserSelector {
   constructor(props) {
     super(props);
   }
 
-  // 打开用户列表，重写该方法会导致默认的用户列表被覆盖
-  openUserList(query) {
-    console.log("@后面的查询字符串", query);
+  open(query: string) {
+    // 自定义打开列表逻辑
+  }
+
+  close() {
+    // 自定义关闭列表逻辑
   }
 
   // 该方法返回的元素将被展示在默认用户列表中
-  createUserElement(user) {
+  createUserItem(user) {
     const { name, avatar } = user;
     const img = document.createElement("img");
     img.src = avatar;
@@ -164,6 +187,35 @@ class MyMention extends HiMention {
     div.appendChild(span);
     // 该元素将被当成选项展示在用户列表中
     return div;
+  }
+}
+
+// 使用自定义选择器
+class MyHiMention extends HiMention {
+  constructor(props) {
+    super(props);
+  }
+
+  // 初始化用户选择器
+  initUserSelector() {
+    this.userSelector = new MyHiUserSelector();
+    // 监听鼠标在用户列表中按下事件，防止鼠标点击用户列表时，触发编辑器失去焦点事件
+    this.userSelector.element.onmousedown = () =>
+      setTimeout(() => clearTimeout(this.blurtimeout), 100);
+    // 监听选择用户事件
+    this.userSelector.onSelectUser((user) => {
+      this.mentionUser(user);
+    });
+  }
+
+  // 打开用户选择器
+  openUserSelector(query) {
+    this.userSelector.open(query);
+  }
+
+  // 关闭用户选择器
+  closeUserSelector() {
+    this.userSelector.close();
   }
 }
 ```

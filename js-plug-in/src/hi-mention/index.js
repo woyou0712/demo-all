@@ -18,7 +18,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.HiUserSelector = void 0;
 var Mention_1 = __importDefault(require("./src/Mention"));
+var UserSelector_1 = __importDefault(require("./src/UserSelector"));
+exports.HiUserSelector = UserSelector_1.default;
 var HiMention = /** @class */ (function (_super) {
     __extends(HiMention, _super);
     function HiMention() {

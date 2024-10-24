@@ -1,15 +1,10 @@
 import UserSelector from "./UserSelector";
 import { MentionOptions, UserInfo, EventsType } from "./types";
 declare class Mention {
+    protected blurtimeout?: any;
     protected options: MentionOptions;
     userSelector?: UserSelector;
     constructor(el: Element | HTMLElement | string, option?: Partial<MentionOptions>);
-    /**
-     * 创建用户选项元素
-     * @param user 用户信息
-     * @returns 用户列表中的选项元素
-     */
-    protected createUserElement(user: UserInfo): HTMLElement;
     setOptions(options: Partial<MentionOptions>): this;
     getOptions(): MentionOptions;
     /**

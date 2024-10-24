@@ -24,7 +24,6 @@ var Mention = /** @class */ (function () {
         this._editorEl = (0, utils_1.createElement)("div", { className: const_1.EDITOR_CLASS });
         this._placeholderEl = (0, utils_1.createElement)("div", { className: "hi-mention-placeholder" });
         this._events = {
-            clicks: [],
             blurs: [],
             focuses: [],
             changes: [],
@@ -80,15 +79,14 @@ var Mention = /** @class */ (function () {
     Mention.prototype._onclick = function (e) {
         if (e.target === this._editorEl) {
             e.preventDefault();
-            this._editorEl.focus();
+            this.focus();
         }
-        this._events["clicks"].forEach(function (fn) { return fn(e); });
     };
     Mention.prototype._onblur = function (e) {
         var _this = this;
         this._events["blurs"].forEach(function (fn) { return fn(e); });
-        clearTimeout(this._blurtimeout);
-        this._blurtimeout = setTimeout(function () {
+        clearTimeout(this.blurtimeout);
+        this.blurtimeout = setTimeout(function () {
             _this.closeUserSelector();
         }, 200);
     };
@@ -563,29 +561,6 @@ var Mention = /** @class */ (function () {
             return false;
         return range.commonAncestorContainer === this._editorEl || this._editorEl.contains(range.commonAncestorContainer);
     };
-    /**
-     * 创建用户选项元素
-     * @param user 用户信息
-     * @returns 用户列表中的选项元素
-     */
-    Mention.prototype.createUserElement = function (user) {
-        if (user.element)
-            return user.element;
-        var element = (0, utils_1.createElement)("div", { className: "hi-mention-user-item" });
-        var _a = this.options, nameKey = _a.nameKey, avatarKey = _a.avatarKey;
-        var _b = [user[nameKey], user[avatarKey]], _c = _b[0], name = _c === void 0 ? "" : _c, _d = _b[1], avatar = _d === void 0 ? "" : _d;
-        var left = (0, utils_1.createElement)("div", { className: "hi-mention-user-item-left" });
-        if (avatar) {
-            var img = (0, utils_1.createElement)("img");
-            img.src = avatar;
-            left.appendChild(img);
-        }
-        var right = (0, utils_1.createElement)("div", { className: "hi-mention-user-item-right" });
-        right.innerText = name;
-        element.appendChild(left);
-        element.appendChild(right);
-        return element;
-    };
     Mention.prototype.setOptions = function (options) {
         this.options = __assign(__assign({}, this.options), options);
         var trigger = options.trigger, placeholder = options.placeholder, placeholderColor = options.placeholderColor, mentionColor = options.mentionColor, users = options.users, idKey = options.idKey, nameKey = options.nameKey, avatarKey = options.avatarKey, pingyinKey = options.pingyinKey, media = options.media, usersWdith = options.usersWdith, usersHeight = options.usersHeight;
@@ -780,7 +755,7 @@ var Mention = /** @class */ (function () {
         var _this = this;
         this.userSelector = new UserSelector_1.default(this._rootEl, this.options);
         // 监听鼠标在用户列表中按下事件，防止鼠标点击用户列表时，触发编辑器失去焦点事件
-        this.userSelector.element.onmousedown = function () { return setTimeout(function () { return clearTimeout(_this._blurtimeout); }, 100); };
+        this.userSelector.element.onmousedown = function () { return setTimeout(function () { return clearTimeout(_this.blurtimeout); }, 100); };
         this.userSelector.onSelectUser(function (user) {
             _this.mentionUser(user);
         });
