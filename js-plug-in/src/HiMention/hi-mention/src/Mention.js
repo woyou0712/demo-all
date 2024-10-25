@@ -214,12 +214,14 @@ var Mention = /** @class */ (function () {
         return false;
     };
     Mention.prototype.setOptions = function (options) {
+        var _a;
         this.options = __assign(__assign({}, this.options), options);
         var trigger = options.trigger, placeholder = options.placeholder, placeholderColor = options.placeholderColor, mentionColor = options.mentionColor, users = options.users, idKey = options.idKey, nameKey = options.nameKey, avatarKey = options.avatarKey, pingyinKey = options.pingyinKey, media = options.media, usersWdith = options.usersWdith, usersHeight = options.usersHeight;
         if (placeholder)
             this._placeholderEl.innerText = placeholder;
         if (placeholderColor)
             this._placeholderEl.style.color = placeholderColor;
+        (_a = this.userSelector) === null || _a === void 0 ? void 0 : _a.setOptions(options);
         return this;
     };
     Mention.prototype.getOptions = function () {

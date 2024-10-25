@@ -220,7 +220,7 @@ class Mention {
     const { trigger, placeholder, placeholderColor, mentionColor, users, idKey, nameKey, avatarKey, pingyinKey, media, usersWdith, usersHeight } = options;
     if (placeholder) this._placeholderEl.innerText = placeholder;
     if (placeholderColor) this._placeholderEl.style.color = placeholderColor;
-
+    this.userSelector?.setOptions(options);
     return this;
   }
 
