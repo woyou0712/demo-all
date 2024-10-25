@@ -1,10 +1,10 @@
-import { defaultMentionOptions, EDITOR_CLASS, NEW_LINE, ROW_TAG_CLASS, TEXT_TAG_CLASS } from "./const";
+import { defaultMentionOptions, EDITOR_CLASS, NEW_LINE, PLACEHOLDER_TEXT, ROW_TAG_CLASS, TEXT_TAG_CLASS } from "./const";
 import UserSelector from "./UserSelector";
 import { createElement, createRowTag, createTextNode, fixEditorContent, insertElement, insertText, isEmptyElement } from "./utils/index";
-import { OnEvents, MentionOptions, UserInfo, EventsType } from "./types"
-import { getRangeAt, getSelection, moveRangeAtEditorEnd } from "./utils/range"
-import wordWrap from "./utils/wordWrap"
-import wordDelete from "./utils/wordDelete"
+import { OnEvents, MentionOptions, UserInfo, EventsType } from "./types";
+import { getRangeAt, getSelection, moveRangeAtEditorEnd } from "./utils/range";
+import wordWrap from "./utils/wordWrap";
+import wordDelete from "./utils/wordDelete";
 
 class Mention {
   private _rootEl: HTMLElement;
@@ -55,15 +55,12 @@ class Mention {
     this.initUserSelector();
   }
 
-
-
   private _initElement() {
     this._rootEl.style.position = "relative";
     const body = this._editorBody;
     const editor = this._editorEl;
     editor.setAttribute("contenteditable", "true");
     fixEditorContent(editor);
-
     const placeholderEl = this._placeholderEl;
     placeholderEl.innerText = this.options.placeholder;
     placeholderEl.style.color = this.options.placeholderColor;
@@ -82,7 +79,6 @@ class Mention {
     this._editorEl.oncut = (e) => this._oncut(e);
     this._editorEl.onpaste = (e) => this._onpaste(e);
   }
-
 
   private _onclick(e: MouseEvent) {
     if (e.target === this._editorEl) {
@@ -108,18 +104,19 @@ class Mention {
   }
 
   private _onkeydown(e: KeyboardEvent) {
-    if (["Enter", "NumpadEnter"].includes(e.code)) {
+    let bool = this.onWordWrap(e);
+    if (bool) {
       e.preventDefault();
-      wordWrap();
-      this._onchange(); // 不触发默认行为，需要手动触发change事件
       this._inputEvent();
-    } else if (["Backspace", "Delete"].includes(e.code)) {
-      const bool = wordDelete(e, this._editorEl);
-      if (bool) {
-        e.preventDefault();
-        this._onchange(); // 不触发默认行为，需要手动触发change事件
-        this._inputEvent();
-      }
+      this._onchange(); // 不触发默认行为，需要手动触发change事件
+      return;
+    }
+    bool = this.onWordDelete(e);
+    if (bool) {
+      e.preventDefault();
+      this._inputEvent();
+      this._onchange(); // 不触发默认行为，需要手动触发change事件
+      return;
     }
     this._events["keydowns"].forEach((fn) => fn(e));
   }
@@ -155,7 +152,8 @@ class Mention {
 
   private _onchange() {
     const text = this._editorEl.innerText;
-    if (!text || /^\n*$/.test(text)) {
+    const reg = new RegExp(`^${PLACEHOLDER_TEXT}*$`);
+    if (!text || /^\n*$/.test(text) || reg.test(text)) {
       this._placeholderEl.style.display = "block";
     } else {
       this._placeholderEl.style.display = "none";
@@ -167,8 +165,7 @@ class Mention {
   }
 
   private _inputEvent() {
-    if (isEmptyElement(this._editorEl)) {
-      this._editorEl.innerHTML = createRowTag().outerHTML;
+    if (fixEditorContent(this._editorEl)) {
       this.focus();
     }
     const selection = getSelection();
@@ -195,9 +192,32 @@ class Mention {
     return range?.commonAncestorContainer === this._editorEl || this._editorEl.contains(range.commonAncestorContainer);
   }
 
+  protected wordDelete(e: KeyboardEvent) {
+    return wordDelete(e, this._editorEl);
+  }
+
+  protected onWordDelete(e: KeyboardEvent) {
+    if (["Backspace", "Delete"].includes(e.code)) {
+      return this.wordDelete(e);
+    }
+    return false;
+  }
+
+  protected wordWrap() {
+    return wordWrap();
+  }
+
+  protected onWordWrap(e: KeyboardEvent) {
+    if (["Enter", "NumpadEnter"].includes(e.code)) {
+      this.wordWrap();
+      return true;
+    }
+    return false;
+  }
+
   setOptions(options: Partial<MentionOptions>): this {
     this.options = { ...this.options, ...options };
-    const { trigger, placeholder, placeholderColor, mentionColor, users, idKey, nameKey, avatarKey, pingyinKey, media, usersWdith, usersHeight, } = options;
+    const { trigger, placeholder, placeholderColor, mentionColor, users, idKey, nameKey, avatarKey, pingyinKey, media, usersWdith, usersHeight } = options;
     if (placeholder) this._placeholderEl.innerText = placeholder;
     if (placeholderColor) this._placeholderEl.style.color = placeholderColor;
 
@@ -300,7 +320,7 @@ class Mention {
     const selection = getSelection();
     const range = getRangeAt(0, selection);
     if (!range) return this;
-    insertText(text, range)
+    insertText(text, range);
     this._onchange();
     range.collapse(false);
     selection?.removeAllRanges();
@@ -318,7 +338,7 @@ class Mention {
     const selection = getSelection();
     const range = getRangeAt(0, selection);
     if (!range) return this;
-    insertElement(html, range)
+    insertElement(html, range);
     this._onchange();
     range.collapse(false);
     selection?.removeAllRanges();
@@ -339,7 +359,7 @@ class Mention {
     range.collapse(false);
     selection.removeAllRanges();
     selection.addRange(range);
-    moveRangeAtEditorEnd(range, this._editorEl)
+    moveRangeAtEditorEnd(range, this._editorEl);
     return this;
   }
   /**
@@ -382,14 +402,13 @@ class Mention {
   }
 
   /**
- * 打开用户选择器
- * @param query 查询字符串
- * @returns
- */
+   * 打开用户选择器
+   * @param query 查询字符串
+   * @returns
+   */
   protected openUserSelector(query: string) {
     this.userSelector?.open(query);
   }
-
 }
 
 export default Mention;
