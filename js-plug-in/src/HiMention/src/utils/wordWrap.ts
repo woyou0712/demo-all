@@ -1,5 +1,5 @@
 import { ROW_TAG_CLASS } from "../const";
-import { createElement, createRowTag, fixRowTag } from ".";
+import { createElement, createRowTag, fixRowContent } from ".";
 import { rangeEls, getRangeAt, moveRangeAtRowStart, getSelection, isRangeAtRowEnd } from "./range"
 
 export default function wordWrap() {
@@ -14,11 +14,11 @@ export default function wordWrap() {
     const eEls = rangeEls(range, "end");
     if (!sEls?.rowEl || !eEls?.rowEl) return;
     // 修正开始行标签
-    fixRowTag(sEls.rowEl);
+    fixRowContent(sEls.rowEl);
     // 如果开始位置和结束位置不在同一行
     if (sEls.rowEl !== eEls.rowEl) {
       // 修正结束行标签
-      fixRowTag(eEls.rowEl);
+      fixRowContent(eEls.rowEl);
       // 将光标移动到结束P标签的开头
       moveRangeAtRowStart(range, eEls.rowEl);
       return;
@@ -44,9 +44,9 @@ export default function wordWrap() {
   const newRow = createElement("p", { className: ROW_TAG_CLASS });
   newRow.appendChild(selectedContent);
   // 修正新的行
-  fixRowTag(newRow);
+  fixRowContent(newRow);
   // 修正当前行
-  fixRowTag(els.rowEl);
+  fixRowContent(els.rowEl);
   // 插入创建的p标签在原P标签之前
   els.rowEl.insertAdjacentElement("beforebegin", newRow);
   // 将光标移动到原P标签开头

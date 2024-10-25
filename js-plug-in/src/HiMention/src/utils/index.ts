@@ -17,7 +17,7 @@ export const createElement = <K extends keyof HTMLElementTagNameMap>(type: K, { 
  * 判断一个标签是否为空标签
  */
 export const isEmptyElement = (el: HTMLElement): boolean => {
-  return Boolean(!el.innerText || el.innerText === "\n");
+  return Boolean(!el.innerText || el.innerText === "\n" || el.innerText === PLACEHOLDER_TEXT);
 };
 
 /**
@@ -46,14 +46,14 @@ export const fixEditorContent = (editor: HTMLElement): void => {
 }
 
 /**
- * 修正行标签
+ * 修正行内容
  */
-export const fixRowTag = (rowEl: HTMLElement): void => {
+export const fixRowContent = (rowEl: HTMLElement): void => {
   if (rowEl.childNodes.length > 1) {
     const brs = rowEl.querySelectorAll("br");
     brs.forEach((br) => br.remove());
   }
-  if (!rowEl.childNodes.length || !rowEl.innerText || rowEl.innerText === "\n") {
+  if (isEmptyElement(rowEl)) {
     rowEl.innerHTML = createTextTag(NEW_LINE).outerHTML;
   } else if (rowEl.children[rowEl.children.length - 1].className !== TEXT_TAG_CLASS) {
     rowEl.appendChild(createTextTag());

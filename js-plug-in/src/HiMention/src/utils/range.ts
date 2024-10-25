@@ -1,4 +1,4 @@
-import { createElement, createTextTag } from ".";
+import { createElement, createTextTag, isEmptyElement } from ".";
 import { EDITOR_CLASS, NEW_LINE, PLACEHOLDER_TEXT, ROW_TAG_CLASS, TEXT_TAG_CLASS } from "../const";
 
 
@@ -151,16 +151,29 @@ export function isRangeAtRowEnd(range: Range, rowEl: HTMLElement) {
   const els = rangeEls(range);
   if (!els) return false;
   if (els.rowEl !== rowEl) return false;
-  return els.textEl === rowEl.children[rowEl.children.length - 1] && range.endOffset === els.textEl.textContent?.length
+  if (range.endContainer === rowEl && range.endOffset === rowEl.childNodes.length) return true;
+  if (range.endContainer === els.textEl && range.endOffset === els.textEl.childNodes.length) return true;
+  const length = els.textEl.textContent?.includes(PLACEHOLDER_TEXT) ? els.textEl.textContent?.length - PLACEHOLDER_TEXT.length : els.textEl.textContent?.length;
+  return els.textEl === rowEl.lastChild && (range.endOffset === length || isEmptyElement(range.endContainer as HTMLElement))
 }
 
 /**
  * 判断光标是否在当前行的开头
  */
 export function isRangeAtRowStart(range: Range, rowEl: HTMLElement) {
-  if (range.startOffset !== 0) return false;
+  // 如果不是0宽占位符就必须是0
+  if (range.commonAncestorContainer.textContent !== PLACEHOLDER_TEXT && range.startOffset !== 0) return false;
   const els = rangeEls(range);
   if (!els) return false;
   if (els.rowEl !== rowEl) return false;
-  return els?.textEl === rowEl.children[0]
+  if (els.textEl !== rowEl.children[0]) return false
+  if (els.textEl.textContent === PLACEHOLDER_TEXT) return true;
+  return range.startOffset === 0;
+}
+
+/**
+ * 判断光标是否在当前文本元素开头
+ */
+export function isRangeAtTextStart(range: Range, textEl: HTMLElement) {
+  return textEl.textContent?.[0] === PLACEHOLDER_TEXT && range.endOffset === 1 || range.endOffset === 0
 }
