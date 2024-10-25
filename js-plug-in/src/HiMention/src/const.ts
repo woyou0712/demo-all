@@ -2,10 +2,14 @@ import { MentionOptions, UserSelectorOptions } from "./types";
 
 // 编辑器类名
 export const EDITOR_CLASS = "hi-mention-editor";
-// p标签类名
-export const P_TAG_CLASS = "hi-mention-row";
-// 空的输入框内容
-export const EMPTY_INPUT_CONTENT = `<p class="${P_TAG_CLASS}"><br></p>`;
+// 行标签类名
+export const ROW_TAG_CLASS = "hi-mention-row";
+// 文本标签类名
+export const TEXT_TAG_CLASS = "hi-mention-text";
+// 占位符
+export const PLACEHOLDER_TEXT = "\uFEFF";
+// 换行符
+export const NEW_LINE = "<br/>";
 
 
 export const defaultUserSelectorOptions = (): UserSelectorOptions => ({

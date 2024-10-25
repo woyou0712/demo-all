@@ -1,7 +1,7 @@
 import { defaultUserSelectorOptions } from "./const";
-import { createDocumentFragment, createElement, getRangeAt } from "./utils";
+import { createDocumentFragment, createElement } from "./utils/index";
 import { UserInfo, UserSelectorOptions, ViewUser } from "./types";
-
+import { getRangeAt, getSelection } from "./utils/range";
 
 export default class UserSelector {
   private _rootEl: HTMLElement;
@@ -75,7 +75,7 @@ export default class UserSelector {
     const selection = getSelection();
     if (!selection) return null;
     if (selection.rangeCount > 0) {
-      const range = getRangeAt(selection);
+      const range = getRangeAt(0, selection);
       if (!range) return null;
       const rect = range.getBoundingClientRect();
       const { left, top, right, bottom } = this._rootEl.getBoundingClientRect();

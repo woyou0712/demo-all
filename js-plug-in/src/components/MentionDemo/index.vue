@@ -90,6 +90,7 @@ onMounted(() => {
     users: users.value,
     media: vw.value < 750 ? "H5" : "PC",
   }).on("change", (d) => (msg.value = d?.html || ""));
+  console.log(m.value);
 });
 const focus = () => {
   m.value?.focus();
