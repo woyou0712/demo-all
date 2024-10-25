@@ -17,7 +17,7 @@ export const createElement = <K extends keyof HTMLElementTagNameMap>(type: K, { 
  * 判断一个标签是否为空标签
  */
 export const isEmptyElement = (el: HTMLElement): boolean => {
-  return Boolean(!el.innerText || el.innerText === "\n" || el.innerText === PLACEHOLDER_TEXT);
+  return Boolean(!el.textContent || el.textContent === "\n" || el.textContent === PLACEHOLDER_TEXT);
 };
 
 /**
