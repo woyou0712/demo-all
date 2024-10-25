@@ -136,19 +136,20 @@ new HiMention(element, options);
 
 ### HiMention 接口
 
-| 接口名              | 说明             | 类型                 | 备注                                      |
-| ------------------- | ---------------- | -------------------- | ----------------------------------------- |
-| `initUserSelector`  | 初始化用户选择器 | `()=>void`           | -                                         |
-| `closeUserSelector` | 关闭用户选择器   | `()=>void`           | -                                         |
-| `openUserSelector`  | 打开用户列表     | `(query:User)=>void` | `query`:为用户输入`@`时后面跟的查询字符串 |
+| 接口名              | 说明                   | 类型                 | 备注                                      |
+| ------------------- | ---------------------- | -------------------- | ----------------------------------------- |
+| `initUserSelector`  | 方法：初始化用户选择器 | `()=>void`           | -                                         |
+| `closeUserSelector` | 方法：关闭用户选择器   | `()=>void`           | -                                         |
+| `openUserSelector`  | 方法：打开用户列表     | `(query:User)=>void` | `query`:为用户输入`@`时后面跟的查询字符串 |
 
 ### HiUserSelector 接口
 
-| 接口名           | 说明                  | 类型                   | 备注 |
-| ---------------- | --------------------- | ---------------------- | ---- |
-| `open`           | 打开用户列表          | `(query:string)=>void` | -    |
-| `close`          | 关闭用户列表          | `()=>void`             | -    |
-| `createUserItem` | 创建用户选项`Element` | `(user:User)=>Element` | -    |
+| 接口名           | 说明                        | 类型                   | 备注 |
+| ---------------- | --------------------------- | ---------------------- | ---- |
+| `element`        | 属性：用户列表根元素        | `HTMLElement`          | -    |
+| `open`           | 方法：打开用户列表          | `(query:string)=>void` | -    |
+| `close`          | 方法：关闭用户列表          | `()=>void`             | -    |
+| `createUserItem` | 方法：创建用户选项`Element` | `(user:User)=>Element` | -    |
 
 - 继承示例
 
@@ -160,6 +161,7 @@ import "hi-mention/index.css";
 
 // 创建自定义用户选择器
 class MyHiUserSelector extends HiUserSelector {
+  element: HTMLElement = document.createElement("div"); // 这是用户列表的根元素
   constructor(props) {
     super(props);
   }
@@ -200,8 +202,7 @@ class MyHiMention extends HiMention {
   initUserSelector() {
     this.userSelector = new MyHiUserSelector();
     // 监听鼠标在用户列表中按下事件，防止鼠标点击用户列表时，触发编辑器失去焦点事件
-    this.userSelector.element.onmousedown = () =>
-      setTimeout(() => clearTimeout(this.blurtimeout), 100);
+    this.userSelector.element.onmousedown = () => setTimeout(() => clearTimeout(this.blurtimeout), 100);
     // 监听选择用户事件
     this.userSelector.onSelectUser((user) => {
       this.mentionUser(user);
@@ -216,6 +217,43 @@ class MyHiMention extends HiMention {
   // 关闭用户选择器
   closeUserSelector() {
     this.userSelector.close();
+  }
+}
+```
+
+## 自定义换行
+
+- 如果内置换行功能无法满足需求，可以通过继承 HiMention 组件，以下方法来实现自定义换行
+
+### HiMention 接口
+
+| 接口名       | 说明                       | 类型                          | 备注 |
+| ------------ | -------------------------- | ----------------------------- | ---- |
+| `onWordWrap` | 方法：监听用户按下换行按键 | `(e: KeyboardEvent): boolean` | -    |
+
+- 继承示例
+
+```javascript
+// 引入插件
+import HiMention from "hi-mention";
+// 引入插件样式
+import "hi-mention/index.css";
+
+// 使用自定义选择器
+class MyHiMention extends HiMention {
+  constructor(props) {
+    super(props);
+  }
+
+  // 监听用户按下换行按键
+  onWordWrap(e: KeyboardEvent): boolean {
+    if (["Enter", "NumpadEnter"].includes(e.code)) {
+      // 调用内置换行方法
+      this.wordWrap();
+      // 如果换行完成请返回true
+      return true;
+    }
+    return false; // 没有自行换行，返回false
   }
 }
 ```
