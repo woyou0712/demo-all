@@ -1,10 +1,15 @@
 import { UserInfo, UserSelectorOptions } from "./types";
 export default class UserSelector {
+    private _rootEl;
     element: HTMLDivElement;
+    private _status;
     get status(): "open" | "close";
     set status(status: "open" | "close");
     options: UserSelectorOptions;
+    private _viewUsers;
+    private onselecteds;
     constructor(el: Element | HTMLElement, options: Partial<UserSelectorOptions>);
+    private initUsersEl;
     /**
      * 创建用户选项元素
      * @param user 用户信息

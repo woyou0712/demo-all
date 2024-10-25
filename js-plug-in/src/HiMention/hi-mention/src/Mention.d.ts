@@ -1,10 +1,36 @@
 import UserSelector from "./UserSelector";
 import { MentionOptions, UserInfo, EventsType } from "./types";
 declare class Mention {
+    private _rootEl;
+    private _editorBody;
+    private _editorEl;
+    private _placeholderEl;
+    private _events;
+    private _changetimeout?;
     protected blurtimeout?: any;
+    private _inputRange?;
+    private _inputSelection?;
     protected options: MentionOptions;
     userSelector?: UserSelector;
+    private _queryStr;
     constructor(el: Element | HTMLElement | string, option?: Partial<MentionOptions>);
+    private _initElement;
+    private _initEvent;
+    private _onclick;
+    private _onblur;
+    private _onfocus;
+    private _onkeydown;
+    private _onkeyup;
+    private _oninput;
+    private _oncut;
+    private _onpaste;
+    private _onchange;
+    private _inputEvent;
+    private _isCursorInEditor;
+    protected wordDelete(e: KeyboardEvent): boolean;
+    protected onWordDelete(e: KeyboardEvent): boolean;
+    protected wordWrap(): void;
+    protected onWordWrap(e: KeyboardEvent): boolean;
     setOptions(options: Partial<MentionOptions>): this;
     getOptions(): MentionOptions;
     /**
@@ -36,7 +62,7 @@ declare class Mention {
      * @param html html内容
      * @returns 返回当前实例
      */
-    insertHtml(html: Element): this;
+    insertHtml(html: HTMLElement): this;
     /**
      * 获取焦点
      * @returns 返回当前实例
@@ -58,10 +84,10 @@ declare class Mention {
     protected initUserSelector(): void;
     protected closeUserSelector(): void;
     /**
-   * 打开用户选择器
-   * @param query 查询字符串
-   * @returns
-   */
+     * 打开用户选择器
+     * @param query 查询字符串
+     * @returns
+     */
     protected openUserSelector(query: string): void;
 }
 export default Mention;

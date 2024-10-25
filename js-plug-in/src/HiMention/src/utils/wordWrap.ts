@@ -31,7 +31,6 @@ export default function wordWrap() {
   if (isRangeAtRowEnd(range, els.rowEl)) {
     // 在当前行后创建一个新行
     const newRow = createRowTag();
-    console.log(newRow);
     els.rowEl.insertAdjacentElement("afterend", newRow);
     // 将光标设置到新创建的p标签中
     moveRangeAtRowStart(range, newRow);

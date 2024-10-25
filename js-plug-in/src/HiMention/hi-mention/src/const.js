@@ -1,12 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.defaultMentionOptions = exports.defaultUserSelectorOptions = exports.EMPTY_INPUT_CONTENT = exports.P_TAG_CLASS = exports.EDITOR_CLASS = void 0;
+exports.defaultMentionOptions = exports.defaultUserSelectorOptions = exports.NEW_LINE = exports.PLACEHOLDER_TEXT = exports.TEXT_TAG_CLASS = exports.ROW_TAG_CLASS = exports.EDITOR_CLASS = void 0;
 // 编辑器类名
 exports.EDITOR_CLASS = "hi-mention-editor";
-// p标签类名
-exports.P_TAG_CLASS = "hi-mention-row";
-// 空的输入框内容
-exports.EMPTY_INPUT_CONTENT = "<p class=\"".concat(exports.P_TAG_CLASS, "\"><br></p>");
+// 行标签类名
+exports.ROW_TAG_CLASS = "hi-mention-row";
+// 文本标签类名
+exports.TEXT_TAG_CLASS = "hi-mention-text";
+// 占位符
+exports.PLACEHOLDER_TEXT = "\uFEFF";
+// 换行符
+exports.NEW_LINE = "<br/>";
 var defaultUserSelectorOptions = function () { return ({
     users: [],
     idKey: "id",

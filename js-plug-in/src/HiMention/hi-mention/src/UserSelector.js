@@ -12,10 +12,11 @@ var __assign = (this && this.__assign) || function () {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var const_1 = require("./const");
-var utils_1 = require("./utils");
+var index_1 = require("./utils/index");
+var range_1 = require("./utils/range");
 var UserSelector = /** @class */ (function () {
     function UserSelector(el, options) {
-        this.element = (0, utils_1.createElement)("div", { className: "hi-mention-user-selector" });
+        this.element = (0, index_1.createElement)("div", { className: "hi-mention-user-selector" });
         this._status = "close";
         this.options = (0, const_1.defaultUserSelectorOptions)();
         this._viewUsers = [];
@@ -61,27 +62,29 @@ var UserSelector = /** @class */ (function () {
     UserSelector.prototype.createUserItem = function (user) {
         if (user.element)
             return user.element;
-        var element = (0, utils_1.createElement)("div", { className: "hi-mention-user-item" });
+        var element = (0, index_1.createElement)("div", { className: "hi-mention-user-item" });
         var _a = this.options, nameKey = _a.nameKey, avatarKey = _a.avatarKey;
         var _b = [user[nameKey], user[avatarKey]], _c = _b[0], name = _c === void 0 ? "" : _c, _d = _b[1], avatar = _d === void 0 ? "" : _d;
-        var left = (0, utils_1.createElement)("div", { className: "hi-mention-user-item-left" });
+        var left = (0, index_1.createElement)("div", { className: "hi-mention-user-item-left" });
         if (avatar) {
-            var img = (0, utils_1.createElement)("img");
+            var img = (0, index_1.createElement)("img");
             img.src = avatar;
             left.appendChild(img);
         }
-        var right = (0, utils_1.createElement)("div", { className: "hi-mention-user-item-right" });
+        var right = (0, index_1.createElement)("div", { className: "hi-mention-user-item-right" });
         right.innerText = name;
         element.appendChild(left);
         element.appendChild(right);
         return element;
     };
     UserSelector.prototype.getCursorPosition = function () {
-        var selection = getSelection();
+        var selection = (0, range_1.getSelection)();
         if (!selection)
             return null;
         if (selection.rangeCount > 0) {
-            var range = selection.getRangeAt(0);
+            var range = (0, range_1.getRangeAt)(0, selection);
+            if (!range)
+                return null;
             var rect = range.getBoundingClientRect();
             var _a = this._rootEl.getBoundingClientRect(), left = _a.left, top_1 = _a.top, right = _a.right, bottom = _a.bottom;
             // 根据光标在屏幕上的位置
@@ -109,7 +112,7 @@ var UserSelector = /** @class */ (function () {
     UserSelector.prototype.viewUserItems = function (query) {
         var element = this.element;
         element.innerHTML = "";
-        var box = (0, utils_1.createDocumentFragment)();
+        var box = (0, index_1.createDocumentFragment)();
         var _a = this.options, idKey = _a.idKey, nameKey = _a.nameKey, avatarKey = _a.avatarKey, pingyinKey = _a.pingyinKey;
         this._viewUsers.forEach(function (user) {
             var _a = [user[idKey], user[nameKey], user[avatarKey], user[pingyinKey]], _b = _a[0], id = _b === void 0 ? 0 : _b, _c = _a[1], name = _c === void 0 ? "" : _c, _d = _a[2], pingyin = _d === void 0 ? "" : _d;
