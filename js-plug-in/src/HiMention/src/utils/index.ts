@@ -127,8 +127,14 @@ export function transferElement(el: Element | Node, target: HTMLElement | Node) 
 /**
  * 判断文本内容是否需要修正
  */
-export function isNeedFix(text?: string): boolean {
+export function isNeedFix(textEl: HTMLElement): boolean {
+  const text = textEl.textContent || "";
   if (!text) return false;
+  let textNodeNum = 0;
+  for (let i = 0; i < textEl.childNodes.length; i++) {
+    if (textEl.childNodes[i].textContent) textNodeNum++;
+    if (textNodeNum > 1) return true;
+  }
   return new RegExp(`\n|${PLACEHOLDER_TEXT}|\r`).test(text);
 }
 

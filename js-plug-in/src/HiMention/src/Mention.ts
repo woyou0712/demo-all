@@ -1,6 +1,6 @@
 import { defaultMentionOptions, EDITOR_CLASS, PLACEHOLDER_TEXT } from "./const";
 import UserSelector from "./UserSelector";
-import { createElement, createTextNode, fixEditorContent, fixRowContent, isNeedFix } from "./utils/index";
+import { createElement, createTextNode, fixEditorContent, fixRowContent } from "./utils/index";
 import { OnEvents, MentionOptions, UserInfo, EventsType } from "./types";
 import { fixTextContent, getRangeAt, getSelection, moveRangeAtEditorEnd, rangeEls, insertText, insertElement, removeRangeContent } from "./utils/range";
 import wordWrap from "./utils/wordWrap";

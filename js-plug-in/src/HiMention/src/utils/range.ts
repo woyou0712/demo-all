@@ -185,9 +185,27 @@ export function isRangeAtRowEnd(range: Range, rowEl: HTMLElement) {
  * 判断光标是否在当前文本元素末尾
  */
 export function isRangeAtTextEnd(range: Range) {
-  const textEl = range.endContainer as HTMLElement;
-  if (textEl.textContent?.[textEl.textContent?.length - 1] === PLACEHOLDER_TEXT && range.endOffset === textEl.textContent?.length - 1) return true;
-  return range.endOffset === textEl.textContent?.length;
+  const rangeEl = range.endContainer as HTMLElement;
+  let textEl: HTMLElement = rangeEl;
+  if (textEl.className !== TEXT_TAG_CLASS && textEl.parentElement) {
+    textEl = textEl.parentElement as HTMLElement;
+  }
+  if (rangeEl.className === TEXT_TAG_CLASS && range.endOffset === rangeEl.childNodes.length) return true;
+  if (Number(textEl.textContent?.length) === 0) return true;
+  if (Number(textEl.textContent?.length) === 1) {
+    if (textEl.textContent === PLACEHOLDER_TEXT) return true;
+    if (textEl.textContent === "\n") return true;
+    if (rangeEl.nodeName === "BR") return true;
+  }
+  if (rangeEl.nodeName === "#text") {
+    if (range.endOffset < Number(rangeEl.textContent?.length)) return false;
+    const nodeIndex = Array.from(rangeEl.parentElement?.childNodes || []).indexOf(rangeEl);
+    for (let i = nodeIndex + 1; i < textEl.childNodes.length; i++) {
+      if (textEl.childNodes[i].textContent?.trim()) return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -208,9 +226,30 @@ export function isRangeAtRowStart(range: Range, rowEl: HTMLElement) {
  * 判断光标是否在当前文本元素开头
  */
 export function isRangeAtTextStart(range: Range) {
-  const textEl = range.startContainer as HTMLElement;
-  if (textEl.textContent?.[0] === PLACEHOLDER_TEXT && range.startOffset === 1) return true;
-  return range.startOffset === 0;
+  const rangeEl = range.startContainer as HTMLElement;
+  let textEl: HTMLElement = rangeEl;
+  if (textEl.className !== TEXT_TAG_CLASS && textEl.parentElement) {
+    textEl = textEl.parentElement as HTMLElement;
+  }
+  if (rangeEl.className === TEXT_TAG_CLASS && range.endOffset === 0) return true;
+  if (Number(textEl.textContent?.length) === 0) return true;
+  if (Number(textEl.textContent?.length) === 1) {
+    if (textEl.textContent === PLACEHOLDER_TEXT) return true;
+    if (textEl.textContent === "\n") return true;
+    if (rangeEl.nodeName === "BR") return true;
+  }
+
+  if (range.startOffset > 0) return false;
+
+  if (rangeEl.nodeName === "#text") {
+    const nodeIndex = Array.from(rangeEl.parentElement?.childNodes || []).indexOf(rangeEl);
+    for (let i = 0; i < nodeIndex; i++) {
+      if (textEl.childNodes[i].textContent?.trim()) return false;
+    }
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -220,7 +259,7 @@ export function fixTextContent(range: Range, els?: RangeElsType): void {
   const _els = els || rangeEls(range);
   if (!_els) return;
   const { textEl } = _els;
-  if (!isNeedFix(textEl.textContent || "")) return;
+  if (!isNeedFix(textEl)) return;
 
   if (textEl.className !== TEXT_TAG_CLASS) return;
   if (range.startContainer.nodeName === "BR") {
@@ -409,7 +448,7 @@ export function insertElement(el: HTMLElement, range: Range): boolean {
   el.setAttribute("contenteditable", "false");
 
   // 如果当前光标在文本节点开头，则将元素插入到文本节点之前
-  if (range.startOffset === 0) {
+  if (isRangeAtTextStart(range)) {
     // 获取当前textEL的前一个兄弟节点
     let prevEl = els.textEl.previousElementSibling;
     if (!prevEl || prevEl.className !== TEXT_TAG_CLASS) {
@@ -417,7 +456,7 @@ export function insertElement(el: HTMLElement, range: Range): boolean {
     }
     els.textEl.insertAdjacentElement("beforebegin", el);
     return true;
-  } else if (range.endOffset === range.endContainer.textContent?.length) {
+  } else if (isRangeAtTextEnd(range)) {
     // 获取当前textEL的下一个兄弟节点
     let nextEl = els.textEl.nextElementSibling;
     if (!nextEl || nextEl.className !== TEXT_TAG_CLASS) {
