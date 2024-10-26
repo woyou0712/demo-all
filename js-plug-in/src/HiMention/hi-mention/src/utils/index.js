@@ -138,9 +138,17 @@ function transferElement(el, target) {
 /**
  * 判断文本内容是否需要修正
  */
-function isNeedFix(text) {
+function isNeedFix(textEl) {
+    var text = textEl.textContent || "";
     if (!text)
         return false;
+    var textNodeNum = 0;
+    for (var i = 0; i < textEl.childNodes.length; i++) {
+        if (textEl.childNodes[i].textContent)
+            textNodeNum++;
+        if (textNodeNum > 1)
+            return true;
+    }
     return new RegExp("\n|".concat(const_1.PLACEHOLDER_TEXT, "|\r")).test(text);
 }
 /**

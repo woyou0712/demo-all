@@ -40,7 +40,7 @@ export declare function transferElement(el: Element | Node, target: HTMLElement 
 /**
  * 判断文本内容是否需要修正
  */
-export declare function isNeedFix(text?: string): boolean;
+export declare function isNeedFix(textEl: HTMLElement): boolean;
 /**
  * 格式化字符串，删除字符串中的\n和连续的\r
  */

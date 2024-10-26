@@ -208,11 +208,35 @@ function isRangeAtRowEnd(range, rowEl) {
  * 判断光标是否在当前文本元素末尾
  */
 function isRangeAtTextEnd(range) {
-    var _a, _b, _c, _d;
-    var textEl = range.endContainer;
-    if (((_a = textEl.textContent) === null || _a === void 0 ? void 0 : _a[((_b = textEl.textContent) === null || _b === void 0 ? void 0 : _b.length) - 1]) === const_1.PLACEHOLDER_TEXT && range.endOffset === ((_c = textEl.textContent) === null || _c === void 0 ? void 0 : _c.length) - 1)
+    var _a, _b, _c, _d, _e;
+    var rangeEl = range.endContainer;
+    var textEl = rangeEl;
+    if (textEl.className !== const_1.TEXT_TAG_CLASS && textEl.parentElement) {
+        textEl = textEl.parentElement;
+    }
+    if (rangeEl.className === const_1.TEXT_TAG_CLASS && range.endOffset === rangeEl.childNodes.length)
         return true;
-    return range.endOffset === ((_d = textEl.textContent) === null || _d === void 0 ? void 0 : _d.length);
+    if (Number((_a = textEl.textContent) === null || _a === void 0 ? void 0 : _a.length) === 0)
+        return true;
+    if (Number((_b = textEl.textContent) === null || _b === void 0 ? void 0 : _b.length) === 1) {
+        if (textEl.textContent === const_1.PLACEHOLDER_TEXT)
+            return true;
+        if (textEl.textContent === "\n")
+            return true;
+        if (rangeEl.nodeName === "BR")
+            return true;
+    }
+    if (rangeEl.nodeName === "#text") {
+        if (range.endOffset < Number((_c = rangeEl.textContent) === null || _c === void 0 ? void 0 : _c.length))
+            return false;
+        var nodeIndex = Array.from(((_d = rangeEl.parentElement) === null || _d === void 0 ? void 0 : _d.childNodes) || []).indexOf(rangeEl);
+        for (var i = nodeIndex + 1; i < textEl.childNodes.length; i++) {
+            if ((_e = textEl.childNodes[i].textContent) === null || _e === void 0 ? void 0 : _e.trim())
+                return false;
+        }
+        return true;
+    }
+    return false;
 }
 /**
  * 判断光标是否在当前行的开头
@@ -236,11 +260,35 @@ function isRangeAtRowStart(range, rowEl) {
  * 判断光标是否在当前文本元素开头
  */
 function isRangeAtTextStart(range) {
-    var _a;
-    var textEl = range.startContainer;
-    if (((_a = textEl.textContent) === null || _a === void 0 ? void 0 : _a[0]) === const_1.PLACEHOLDER_TEXT && range.startOffset === 1)
+    var _a, _b, _c, _d;
+    var rangeEl = range.startContainer;
+    var textEl = rangeEl;
+    if (textEl.className !== const_1.TEXT_TAG_CLASS && textEl.parentElement) {
+        textEl = textEl.parentElement;
+    }
+    if (rangeEl.className === const_1.TEXT_TAG_CLASS && range.endOffset === 0)
         return true;
-    return range.startOffset === 0;
+    if (Number((_a = textEl.textContent) === null || _a === void 0 ? void 0 : _a.length) === 0)
+        return true;
+    if (Number((_b = textEl.textContent) === null || _b === void 0 ? void 0 : _b.length) === 1) {
+        if (textEl.textContent === const_1.PLACEHOLDER_TEXT)
+            return true;
+        if (textEl.textContent === "\n")
+            return true;
+        if (rangeEl.nodeName === "BR")
+            return true;
+    }
+    if (range.startOffset > 0)
+        return false;
+    if (rangeEl.nodeName === "#text") {
+        var nodeIndex = Array.from(((_c = rangeEl.parentElement) === null || _c === void 0 ? void 0 : _c.childNodes) || []).indexOf(rangeEl);
+        for (var i = 0; i < nodeIndex; i++) {
+            if ((_d = textEl.childNodes[i].textContent) === null || _d === void 0 ? void 0 : _d.trim())
+                return false;
+        }
+        return true;
+    }
+    return false;
 }
 /**
  * 修正文本标签内容
@@ -251,7 +299,7 @@ function fixTextContent(range, els) {
     if (!_els)
         return;
     var textEl = _els.textEl;
-    if (!(0, _1.isNeedFix)(textEl.textContent || ""))
+    if (!(0, _1.isNeedFix)(textEl))
         return;
     if (textEl.className !== const_1.TEXT_TAG_CLASS)
         return;
@@ -428,7 +476,7 @@ function insertText(text, range) {
  * @returns
  */
 function insertElement(el, range) {
-    var _a, _b, _c;
+    var _a, _b;
     var commonEl = range.commonAncestorContainer;
     if (!["BR", "#text"].includes(commonEl === null || commonEl === void 0 ? void 0 : commonEl.nodeName) && commonEl.className !== const_1.TEXT_TAG_CLASS)
         return false;
@@ -446,7 +494,7 @@ function insertElement(el, range) {
     }
     el.setAttribute("contenteditable", "false");
     // 如果当前光标在文本节点开头，则将元素插入到文本节点之前
-    if (range.startOffset === 0) {
+    if (isRangeAtTextStart(range)) {
         // 获取当前textEL的前一个兄弟节点
         var prevEl = els.textEl.previousElementSibling;
         if (!prevEl || prevEl.className !== const_1.TEXT_TAG_CLASS) {
@@ -455,7 +503,7 @@ function insertElement(el, range) {
         els.textEl.insertAdjacentElement("beforebegin", el);
         return true;
     }
-    else if (range.endOffset === ((_a = range.endContainer.textContent) === null || _a === void 0 ? void 0 : _a.length)) {
+    else if (isRangeAtTextEnd(range)) {
         // 获取当前textEL的下一个兄弟节点
         var nextEl = els.textEl.nextElementSibling;
         if (!nextEl || nextEl.className !== const_1.TEXT_TAG_CLASS) {
@@ -469,8 +517,8 @@ function insertElement(el, range) {
         return true;
     }
     // 如果当前光标在文本节点中间，则将文本节点分割为两个，并将元素插入到中间
-    var text1 = ((_b = range.endContainer.textContent) === null || _b === void 0 ? void 0 : _b.slice(0, range.endOffset)) || const_1.PLACEHOLDER_TEXT;
-    var text2 = ((_c = range.endContainer.textContent) === null || _c === void 0 ? void 0 : _c.slice(range.endOffset)) || const_1.PLACEHOLDER_TEXT;
+    var text1 = ((_a = range.endContainer.textContent) === null || _a === void 0 ? void 0 : _a.slice(0, range.endOffset)) || const_1.PLACEHOLDER_TEXT;
+    var text2 = ((_b = range.endContainer.textContent) === null || _b === void 0 ? void 0 : _b.slice(range.endOffset)) || const_1.PLACEHOLDER_TEXT;
     range.endContainer.textContent = text1;
     var textEl2 = (0, _1.createTextTag)(text2);
     els.textEl.insertAdjacentElement("afterend", textEl2);
