@@ -1,6 +1,6 @@
 import { ROW_TAG_CLASS, TEXT_TAG_CLASS } from "../const";
-import { createDocumentFragment, createElement, createRowTag, createTextTag, fixRowContent } from ".";
-import { rangeEls, getRangeAt, moveRangeAtRowStart, getSelection, isRangeAtRowEnd } from "./range";
+import { createElement, createRowTag, fixRowContent, isEmptyElement, transferElement } from ".";
+import { rangeEls, getRangeAt, moveRangeAtRowStart, getSelection, isRangeAtRowEnd, fixTextRange } from "./range";
 
 export default function wordWrap() {
   const selection = getSelection();
@@ -27,8 +27,9 @@ export default function wordWrap() {
   // 获取当前所在的标签
   let els = rangeEls(range);
   if (!els) return;
+  fixTextRange(range, els.textEl);
   // 如果光标在当前行末尾
-  if (isRangeAtRowEnd(range, els.rowEl)) {
+  if (isEmptyElement(els.rowEl) || isRangeAtRowEnd(range, els.rowEl)) {
     // 在当前行后创建一个新行
     const newRow = createRowTag();
     els.rowEl.insertAdjacentElement("afterend", newRow);
@@ -42,7 +43,6 @@ export default function wordWrap() {
   if (firstChild?.className === TEXT_TAG_CLASS) {
     firstChild = firstChild.firstChild as HTMLElement;
   }
-
   range.setStart(firstChild ? firstChild : els.rowEl, 0);
   range.setEnd(range.endContainer, range.endOffset);
   // 获取光标选中的内容
@@ -58,18 +58,9 @@ export default function wordWrap() {
     }
   }
   emptyEls.forEach((el) => el.parentElement?.removeChild(el));
-  // 将内容插入到新创建的行中
   const newRow = createElement("p", { className: ROW_TAG_CLASS });
-  const fr = createDocumentFragment();
-  selectedContent.childNodes.forEach((node) => {
-    if (node.nodeName === "#text") {
-      if (!node.textContent) return;
-      fr.appendChild(createTextTag(node.textContent));
-    } else {
-      fr.appendChild(node.cloneNode(true));
-    }
-  });
-  newRow.appendChild(fr);
+  // 将内容插入到新创建的行中
+  transferElement(selectedContent, newRow);
   // 修正新的行
   fixRowContent(newRow);
   // 修正当前行

@@ -1,10 +1,11 @@
-import { defaultMentionOptions, EDITOR_CLASS, NEW_LINE, PLACEHOLDER_TEXT, ROW_TAG_CLASS, TEXT_TAG_CLASS } from "./const";
+import { defaultMentionOptions, EDITOR_CLASS, PLACEHOLDER_TEXT } from "./const";
 import UserSelector from "./UserSelector";
-import { createElement, createRowTag, createTextNode, fixEditorContent, insertElement, insertText, isEmptyElement } from "./utils/index";
+import { createElement, fixEditorContent, fixRowContent, insertElement, insertText } from "./utils/index";
 import { OnEvents, MentionOptions, UserInfo, EventsType } from "./types";
-import { getRangeAt, getSelection, moveRangeAtEditorEnd } from "./utils/range";
+import { fixTextRange, getRangeAt, getSelection, moveRangeAtEditorEnd, rangeEls } from "./utils/range";
 import wordWrap from "./utils/wordWrap";
 import wordDelete from "./utils/wordDelete";
+import moveCursor from "./utils/moveCursor";
 
 class Mention {
   private _rootEl: HTMLElement;
@@ -33,6 +34,9 @@ class Mention {
   userSelector?: UserSelector;
 
   private _queryStr = "";
+
+  // 历史记录
+  private _history: { range: Range; html: string }[] = [];
 
   constructor(el: Element | HTMLElement | string, option: Partial<MentionOptions> = {}) {
     if (!el) {
@@ -118,6 +122,17 @@ class Mention {
       this._onchange(); // 不触发默认行为，需要手动触发change事件
       return;
     }
+    bool = this.undoHistory(e);
+    if (bool) {
+      e.preventDefault();
+      return;
+    }
+    bool = this.onMoveCursor(e);
+    if (bool) {
+      e.preventDefault();
+      return;
+    }
+
     this._events["keydowns"].forEach((fn) => fn(e));
   }
   private _onkeyup(e: KeyboardEvent) {
@@ -137,30 +152,39 @@ class Mention {
 
   private _onpaste(e: ClipboardEvent) {
     e.preventDefault();
-    const text = e.clipboardData?.getData("text/plain");
+    let text = e.clipboardData?.getData("text/plain");
     if (!text) return;
+    const reg = new RegExp(`${PLACEHOLDER_TEXT}`, "ig");
+    text = text.replace(reg, "");
     const range = getRangeAt();
     if (!range) return;
+    const els = rangeEls(range);
+    if (!els) return;
+    fixTextRange(range, els.textEl);
     range.deleteContents();
     range.insertNode(document.createTextNode(text));
     // 修正光标位置
     range.setStart(range.endContainer, range.endOffset);
-    range.setEnd(range.endContainer, range.endOffset);
+    range.collapse(true);
+    // 修正行元素
+    fixRowContent(els.rowEl);
     this._inputEvent();
     this._onchange();
   }
 
   private _onchange() {
-    const text = this._editorEl.innerText;
-    const reg = new RegExp(`^${PLACEHOLDER_TEXT}*$`);
-    if (!text || /^\n*$/.test(text) || reg.test(text)) {
+    const text = this._editorEl.textContent;
+    const reg = new RegExp(`^[\n${PLACEHOLDER_TEXT}\r]*$`);
+    if (!text || reg.test(text)) {
       this._placeholderEl.style.display = "block";
     } else {
       this._placeholderEl.style.display = "none";
     }
     clearTimeout(this._changetimeout);
     this._changetimeout = setTimeout(() => {
-      this._events["changes"].forEach((fn) => fn({ text: this._editorEl.innerText, html: this._editorEl.innerHTML }));
+      const html = this._editorEl.innerHTML;
+      this._events["changes"].forEach((fn) => fn({ text: this._editorEl.textContent || "", html }));
+      this.addHistory();
     }, 300);
   }
 
@@ -190,6 +214,30 @@ class Mention {
     const range = getRangeAt();
     if (!range?.commonAncestorContainer) return false;
     return range?.commonAncestorContainer === this._editorEl || this._editorEl.contains(range.commonAncestorContainer);
+  }
+
+  protected addHistory() {
+    // 记录内容变化：待开发
+  }
+
+  protected undoHistory(e: KeyboardEvent) {
+    if (e.ctrlKey && ["Z", "z"].includes(e.key)) {
+      console.log("撤销：开发中！！！");
+      return true;
+    }
+    return false;
+  }
+
+  protected moveCursor(direction: "ArrowLeft" | "ArrowRight") {
+    return moveCursor(direction);
+  }
+
+  protected onMoveCursor(e: KeyboardEvent) {
+    if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
+      this.moveCursor(e.code);
+      return true;
+    }
+    return false;
   }
 
   protected wordDelete(e: KeyboardEvent) {

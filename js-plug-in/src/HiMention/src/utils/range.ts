@@ -1,4 +1,4 @@
-import { createElement, createTextTag, isEmptyElement } from ".";
+import { createElement, createTextNode, createTextTag, isEmptyElement } from ".";
 import { EDITOR_CLASS, NEW_LINE, PLACEHOLDER_TEXT, ROW_TAG_CLASS, TEXT_TAG_CLASS } from "../const";
 
 export function getSelection() {
@@ -15,7 +15,14 @@ export function getSelection() {
  */
 export function getRangeAt(index: number = 0, selection = getSelection()) {
   try {
-    let range = selection ? selection.getRangeAt(index) : document.createRange();
+    let range = selection?.getRangeAt(index);
+    if (!range) {
+      range = document.createRange();
+      range.selectNodeContents(document.body);
+      range.collapse(false);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
     // 如果光标没有选中内容，修正光标位置
     if (range.collapsed) {
       rangeEls(range);
@@ -56,11 +63,11 @@ export function moveRangeAtRowEnd(range: Range, rowEl: HTMLElement) {
     rowEl.appendChild(lastText);
   }
   // 获取最后一个文本标签的长度
-  const textNode = lastText.childNodes[lastText.childNodes.length - 1];
+  const textNode = lastText.lastChild;
   let lastTextLength = (textNode ? textNode.textContent?.length : lastText.textContent?.length) || 0;
   // 设置光标位置
   range.setStart(textNode ? textNode : lastText, lastTextLength);
-  range.setEnd(textNode ? textNode : lastText, lastTextLength);
+  range.collapse(true);
 }
 
 /**
@@ -76,8 +83,9 @@ export function moveRangeAtRowStart(range: Range, rowEl: HTMLElement) {
     rowEl.prepend(firstText);
   }
   // 设置光标位置
-  range.setStart(firstText, 0);
-  range.setEnd(firstText, 0);
+  const textNode = firstText.firstChild;
+  range.setStart(textNode ? textNode : firstText, 0);
+  range.collapse(true);
 }
 
 /**
@@ -131,11 +139,12 @@ export function rangeEls(range: Range, which: "end" | "start" | "common" = "comm
     textEl = createTextTag(rowEl.children.length > 0 ? PLACEHOLDER_TEXT : NEW_LINE);
     rowEl.appendChild(textEl);
   }
-  // 如果光标位置在行或者编辑器中，修正光标位置
-  if (range.commonAncestorContainer === editorEl || range.commonAncestorContainer === rowEl) {
+  // 如果光标位置不在TEXT节点上，修正光标位置
+  if (range.commonAncestorContainer.nodeName !== "#text") {
+    const tNode = textEl.firstChild;
     // 设置光标位置
-    range.setStart(textEl, textEl.textContent?.length || 0);
-    range.setEnd(textEl, textEl.textContent?.length || 0);
+    range.setStart(tNode ? tNode : textEl, 0);
+    range.collapse(true);
   }
 
   return { editorEl, rowEl, textEl };
@@ -183,4 +192,55 @@ export function isRangeAtTextStart(range: Range) {
   const textEl = range.startContainer as HTMLElement;
   if (textEl.textContent?.[0] === PLACEHOLDER_TEXT && range.startOffset === 1) return true;
   return range.startOffset === 0;
+}
+
+/**
+ * 修正文本标签光标
+ */
+export function fixTextRange(range: Range, textEl: HTMLElement): void {
+  if (range.startContainer.nodeName === "BR") {
+    const text = createTextNode();
+    textEl.appendChild(text);
+    range.setStart(text, 0);
+    range.collapse(true);
+    return;
+  }
+  if (textEl.childNodes.length <= 1) return;
+  if (range.startContainer.nodeName !== "#text" && range.startContainer !== textEl) return;
+  let rangeEl = range.startContainer as HTMLElement;
+  let rangeIndex = range.startOffset;
+  if (rangeEl === textEl) {
+    rangeEl = textEl.childNodes[range.startOffset - 1] as HTMLElement;
+    rangeIndex = rangeEl.textContent?.length || 0;
+  }
+
+  for (let i = 0; i < textEl.childNodes.length; i++) {
+    if (rangeEl === textEl.childNodes[i]) {
+      break;
+    } else {
+      rangeIndex += textEl.childNodes[i].textContent?.length || 0;
+    }
+  }
+
+  let text = textEl.textContent || "";
+  // 清除所有的占位符和换行符
+  for (let i = 0; i < text.length; i++) {
+    if (i > rangeIndex) break;
+    const t = text[i];
+    if (t === PLACEHOLDER_TEXT || t === "\n") {
+      rangeIndex -= 1;
+    }
+  }
+  rangeIndex = Math.max(rangeIndex, 0);
+  text = text.replace(new RegExp(PLACEHOLDER_TEXT, "g"), "");
+  text = text.replace(/\n/g, "");
+  if (!text) {
+    text = PLACEHOLDER_TEXT;
+    rangeIndex = 1;
+  }
+  textEl.innerHTML = "";
+  const textNode = createTextNode(text);
+  textEl.appendChild(textNode);
+  range.setStart(textNode, rangeIndex <= text.length ? rangeIndex : text.length);
+  range.collapse(true);
 }

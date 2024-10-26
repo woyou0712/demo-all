@@ -32,7 +32,7 @@
 import { onMounted, ref, watch } from "vue";
 import ChatArea from "../ChatArea/index.vue";
 
-import HiMention, { HiUserSelector } from "../../HiMention/hi-mention";
+import HiMention, { HiUserSelector } from "../../HiMention";
 import "../../HiMention/hi-mention/index.css";
 
 const vw = ref(window.innerWidth);
@@ -84,8 +84,9 @@ onMounted(() => {
   m.value = new HiMention(".editor-content", {
     users: users.value,
     media: vw.value < 750 ? "H5" : "PC",
-  }).on("change", (d) => (msg.value = d?.html || ""));
-  console.log(m.value);
+  }).on("change", (d) => {
+    msg.value = d?.html || "";
+  });
 });
 const focus = () => {
   m.value?.focus();

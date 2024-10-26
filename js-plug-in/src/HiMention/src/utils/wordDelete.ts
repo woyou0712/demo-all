@@ -1,10 +1,10 @@
 import { NEW_LINE, PLACEHOLDER_TEXT, TEXT_TAG_CLASS } from "../const";
-import { createDocumentFragment, createTextTag, fixEditorContent, isEmptyElement } from ".";
-import { getRangeAt, isRangeAtRowEnd, isRangeAtRowStart, isRangeAtTextEnd, isRangeAtTextStart, moveRangeAtEditorEnd, moveRangeAtRowEnd, moveRangeAtRowStart, rangeEls } from "./range";
+import { createTextTag, fixEditorContent, fixRowContent, isEmptyElement, transferElement } from ".";
+import { fixTextRange, getRangeAt, isRangeAtRowEnd, isRangeAtRowStart, isRangeAtTextEnd, isRangeAtTextStart, moveRangeAtEditorEnd, moveRangeAtRowEnd, moveRangeAtRowStart, rangeEls } from "./range";
 
 function onDelete(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; textEl: HTMLElement }): true {
   const rangeNode = range.commonAncestorContainer;
-  // 删除文本内容使用默认行为
+  // 删除文本内容
   const isText = rangeNode.nodeName === "#text";
   const textLength = rangeNode.textContent?.length || 0;
   const isEmpty = rangeNode.textContent === PLACEHOLDER_TEXT;
@@ -15,24 +15,37 @@ function onDelete(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; textEl:
       return true;
     }
     // 否则删除光标位置之后的第一个文本内容
-    const index = range.endOffset;
+    let index = range.endOffset;
     // 找到要删除的内容
-    const text = rangeNode.textContent?.[index];
-    const text1 = rangeNode.textContent?.slice(0, text === PLACEHOLDER_TEXT ? index + 1 : index) || "";
-    const text2 = rangeNode.textContent?.slice(text === PLACEHOLDER_TEXT ? index + 2 : index + 1) || "";
+    let text = rangeNode.textContent?.[index];
+    let sIndex = index;
+    let eIndex = index + 1;
+    if (text === PLACEHOLDER_TEXT) {
+      index += 1;
+      sIndex = index;
+      eIndex = index + 1;
+      text = rangeNode.textContent?.[index + 1];
+    }
+    // 如果要删除的是\r，则将连续的\r都删除
+    if (text === "\r" && index < Number(rangeNode.textContent?.length)) {
+      for (let i = index; i < Number(rangeNode.textContent?.length); i++) {
+        if (rangeNode.textContent?.[i] === "\r") {
+          index += 1;
+          eIndex = index + 1;
+        } else break;
+      }
+    }
+    const text1 = rangeNode.textContent?.slice(0, sIndex) || "";
+    const text2 = rangeNode.textContent?.slice(eIndex) || "";
     rangeNode.textContent = text1 + text2;
+    index = Math.min(index, rangeNode.textContent.length);
     range.setStart(rangeNode, index);
-    range.setEnd(rangeNode, index);
+    range.collapse(true);
     return true;
   }
 
   // 获取当前所在行的下一个兄弟节点
   const nextRow = rowEl.nextElementSibling as HTMLElement;
-
-  // 没有下一个节点并且在当前行的末尾
-  if (!nextRow && isRangeAtRowEnd(range, rowEl)) {
-    return true;
-  }
 
   // 如果当前节点是空标签
   if (isEmptyElement(rowEl)) {
@@ -45,6 +58,11 @@ function onDelete(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; textEl:
     return true;
   }
 
+  // 没有下一个节点并且在当前行的末尾
+  if (!nextRow && isRangeAtRowEnd(range, rowEl)) {
+    return true;
+  }
+
   // 如果光标在当前行的末尾并且有下一个兄弟节点
   if (isRangeAtRowEnd(range, rowEl) && nextRow) {
     // 如果下一个节点是空标签
@@ -52,14 +70,8 @@ function onDelete(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; textEl:
       nextRow.remove();
       return true;
     }
-    // 将下一个兄弟节点的内容复制到当前节点
-    const fr = createDocumentFragment();
-    nextRow.remove();
-    nextRow.childNodes.forEach((node) => {
-      fr.appendChild(node.cloneNode(true));
-    });
-
-    rowEl.appendChild(fr);
+    // 将下一个兄弟节点的内容转移到当前节点
+    transferElement(nextRow, rowEl);
     return true;
   }
   let delEl = textEl; // 要删除的内容
@@ -92,7 +104,7 @@ function onDelete(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; textEl:
     if (!isEmptyElement(delEl)) {
       const textNode = delEl.lastChild;
       range.setStart(textNode ? textNode : delEl, 0);
-      range.setEnd(textNode ? textNode : delEl, 0);
+      range.collapse(true);
       return true;
     }
   }
@@ -107,40 +119,55 @@ function onDelete(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; textEl:
     // 下一个节点的第一个子节点
     const textNode = nextNode.firstChild;
     range.setStart(textNode ? textNode : nextNode, 0);
-    range.setEnd(textNode ? textNode : nextNode, 0);
+    range.collapse(true);
   }
   return true;
 }
 
 function onBackspace(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; textEl: HTMLElement }): true {
   const rangeNode = range.commonAncestorContainer as HTMLElement;
-  // 删除文本内容使用默认行为
+  // 删除文本内容
   const isText = rangeNode.nodeName === "#text";
   const isEmpty = rangeNode.textContent === PLACEHOLDER_TEXT;
   if (isText && !isEmpty && range.startOffset > 0) {
     // 如果只有一个字符，则将节点内容设置为0宽占位符
-    if (range.startOffset === 1) {
+    if (range.startContainer.textContent?.length === 1) {
       rangeNode.textContent = PLACEHOLDER_TEXT;
       return true;
     }
-    // 否则删除光标位置之后的第一个文本内容
-    const index = range.startOffset;
+    // 否则删除光标位置之前的第一个文本内容
+    let index = range.startOffset;
     // 找到要删除的内容
-    const text = rangeNode.textContent?.[index - 1];
-    const text1 = rangeNode.textContent?.slice(0, text === PLACEHOLDER_TEXT ? index - 2 : index - 1) || "";
-    const text2 = rangeNode.textContent?.slice(text === PLACEHOLDER_TEXT ? index - 1 : index) || "";
+    let text = rangeNode.textContent?.[index - 1];
+    let sIndex = index - 1;
+    let eIndex = index;
+    if (text === PLACEHOLDER_TEXT) {
+      index -= 1;
+      sIndex = index - 1;
+      eIndex = index;
+      text = rangeNode.textContent?.[index - 1];
+    }
+    // 如果要删除的是\r，则将连续的\r都删除
+    if (text === "\r" && index > 1) {
+      for (let i = index - 1; i >= 0; i--) {
+        if (rangeNode.textContent?.[i] === "\r") {
+          index -= 1;
+          sIndex = index - 1;
+        } else break;
+      }
+    }
+
+    const text1 = rangeNode.textContent?.slice(0, sIndex) || "";
+    const text2 = rangeNode.textContent?.slice(eIndex) || "";
     rangeNode.textContent = text1 + text2;
-    range.setStart(rangeNode, index - 1);
-    range.setEnd(rangeNode, index - 1);
+    index = Math.max(0, index - 1);
+    index = Math.min(index, rangeNode.textContent.length);
+    range.setStart(rangeNode, index);
+    range.collapse(true);
     return true;
   }
-
   // 获取当前光标所在P标签的上一个兄弟节点
   const upRow = rowEl.previousElementSibling as HTMLElement;
-  // 如果没有上级兄弟，并且光标在当前行开头，不执行操作
-  if (!upRow && isRangeAtRowStart(range, rowEl)) {
-    return true;
-  }
 
   // 如果当前节点是空标签
   if (isEmptyElement(rowEl)) {
@@ -154,6 +181,11 @@ function onBackspace(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; text
     return true;
   }
 
+  // 如果没有上级兄弟，并且光标在当前行开头，不执行操作
+  if (!upRow && isRangeAtRowStart(range, rowEl)) {
+    return true;
+  }
+
   // 如果光标在当前行开头，并且有上一个兄弟节点
   if (isRangeAtRowStart(range, rowEl) && upRow) {
     // 如果上一个标签是空节点，直接删除上一个标签
@@ -161,17 +193,11 @@ function onBackspace(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; text
       upRow.remove();
       return true;
     }
-    // 将当前行中的所有内容转入到上一行
-    const fr = createDocumentFragment();
-    rowEl.remove();
-    // 将当前行中的所有内容复制到文档片段中
-    rowEl.childNodes.forEach((node) => {
-      fr.appendChild(node.cloneNode(true));
-    });
     // 将光标移动到上一个P标签的末尾
     moveRangeAtRowEnd(range, upRow);
-    // 将当前P标签的内容添加到上一个P标签中
-    upRow.appendChild(fr);
+    rowEl.remove();
+    // 将当前行的内容添加到上一行中
+    transferElement(rowEl, upRow);
     return true;
   }
 
@@ -200,7 +226,7 @@ function onBackspace(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; text
       const textNode = delEl.lastChild;
       const textLength = delEl.textContent?.length || 0;
       range.setStart(textNode ? textNode : delEl, textNode ? textLength : delEl.childNodes.length);
-      range.setEnd(textNode ? textNode : delEl, textNode ? textLength : delEl.childNodes.length);
+      range.collapse(true);
       return true;
     }
   }
@@ -216,7 +242,7 @@ function onBackspace(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; text
     const nextChild = upNode.childNodes[childLength - 1];
     const index = isEmptyElement(upNode) ? 0 : nextChild.textContent?.length || 0;
     range.setStart(nextChild, index);
-    range.setEnd(nextChild, index);
+    range.collapse(true);
   }
   return true;
 }
@@ -242,27 +268,30 @@ export default function wordDelete(e: KeyboardEvent, editorEl: HTMLElement) {
     range.deleteContents();
     // 如果开始和结束P标签不一致，将结束标签中的剩余内容复制到开始标签中，并删除结束标签
     if (startP !== endP) {
-      const fr = createDocumentFragment();
       endP.remove();
-      endP.childNodes.forEach((node) => {
-        fr.appendChild(node.cloneNode(true));
-      });
-      startP.appendChild(fr);
+      transferElement(endP, startP);
     }
     // 修正光标位置
     range.setStart(startContainer, startOffset);
-    range.setEnd(startContainer, startOffset);
+    range.collapse(true);
     return true;
   }
   // 获取当前光标所在的P标签
   let els = rangeEls(range);
   if (!els) return true;
-
+  let bool = false;
+  fixTextRange(range, els.textEl);
   if (e.code === "Backspace") {
-    return onBackspace(range, els);
+    bool = onBackspace(range, els);
   }
   if (e.code === "Delete") {
-    return onDelete(range, els);
+    bool = onDelete(range, els);
   }
-  return false;
+
+  if (bool) {
+    // 修正当前行标签
+    fixRowContent(els.rowEl);
+  }
+
+  return bool;
 }
