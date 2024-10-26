@@ -24,12 +24,30 @@ export declare const fixEditorContent: (editor: HTMLElement) => boolean;
 /**
  * 修正行内容
  */
-export declare const fixRowContent: (rowEl: HTMLElement) => void;
-/**
- * 修正文本内容
- */
-export declare const fixTextContent: (textEl: HTMLElement) => void;
+export declare const fixRowContent: (rowEl: HTMLElement, rangeTextEl?: HTMLElement) => void;
 export declare const createTextNode: (text?: string) => Text;
-export declare const createDocumentFragment: (el?: HTMLElement | DocumentFragment) => DocumentFragment;
+/**
+ * 创建一个空节点用来装载子元素
+ * @returns
+ */
+export declare const createDocumentFragment: () => DocumentFragment;
+/**
+ * 插入文本
+ * @param text 文本内容
+ * @param range 光标位置
+ * @returns
+ */
 export declare const insertText: (text: string, range: Range) => boolean;
+/**
+ * 在文本内容中插入元素
+ * @param el 需要插入的元素
+ * @param range 光标位置
+ * @returns
+ */
 export declare const insertElement: (el: HTMLElement, range: Range) => boolean;
+/**
+ * 将一个元素的内容转移到另外一个元素下面
+ * @param el 需要移动的元素
+ * @param target 目标元素
+ */
+export declare const transferElement: (el: Element | Node, target: HTMLElement | Node) => void;

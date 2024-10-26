@@ -41,3 +41,7 @@ export declare function isRangeAtRowStart(range: Range, rowEl: HTMLElement): boo
  * 判断光标是否在当前文本元素开头
  */
 export declare function isRangeAtTextStart(range: Range): boolean;
+/**
+ * 修正文本标签光标
+ */
+export declare function fixTextRange(range: Range, textEl: HTMLElement): void;

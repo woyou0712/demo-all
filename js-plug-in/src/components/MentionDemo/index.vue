@@ -32,7 +32,7 @@
 import { onMounted, ref, watch } from "vue";
 import ChatArea from "../ChatArea/index.vue";
 
-import HiMention, { HiUserSelector } from "../../HiMention";
+import HiMention, { HiUserSelector } from "../../HiMention/hi-mention";
 import "../../HiMention/hi-mention/index.css";
 
 const vw = ref(window.innerWidth);

@@ -10,6 +10,7 @@ exports.isRangeAtRowEnd = isRangeAtRowEnd;
 exports.isRangeAtTextEnd = isRangeAtTextEnd;
 exports.isRangeAtRowStart = isRangeAtRowStart;
 exports.isRangeAtTextStart = isRangeAtTextStart;
+exports.fixTextRange = fixTextRange;
 var _1 = require(".");
 var const_1 = require("../const");
 function getSelection() {
@@ -27,7 +28,14 @@ function getRangeAt(index, selection) {
     if (index === void 0) { index = 0; }
     if (selection === void 0) { selection = getSelection(); }
     try {
-        var range = selection ? selection.getRangeAt(index) : document.createRange();
+        var range = selection === null || selection === void 0 ? void 0 : selection.getRangeAt(index);
+        if (!range) {
+            range = document.createRange();
+            range.selectNodeContents(document.body);
+            range.collapse(false);
+            selection === null || selection === void 0 ? void 0 : selection.removeAllRanges();
+            selection === null || selection === void 0 ? void 0 : selection.addRange(range);
+        }
         // 如果光标没有选中内容，修正光标位置
         if (range.collapsed) {
             rangeEls(range);
@@ -68,11 +76,11 @@ function moveRangeAtRowEnd(range, rowEl) {
         rowEl.appendChild(lastText);
     }
     // 获取最后一个文本标签的长度
-    var textNode = lastText.childNodes[lastText.childNodes.length - 1];
+    var textNode = lastText.lastChild;
     var lastTextLength = (textNode ? (_a = textNode.textContent) === null || _a === void 0 ? void 0 : _a.length : (_b = lastText.textContent) === null || _b === void 0 ? void 0 : _b.length) || 0;
     // 设置光标位置
     range.setStart(textNode ? textNode : lastText, lastTextLength);
-    range.setEnd(textNode ? textNode : lastText, lastTextLength);
+    range.collapse(true);
 }
 /**
  * 将光标位置移动到当前行的开头
@@ -87,14 +95,14 @@ function moveRangeAtRowStart(range, rowEl) {
         rowEl.prepend(firstText);
     }
     // 设置光标位置
-    range.setStart(firstText, 0);
-    range.setEnd(firstText, 0);
+    var textNode = firstText.firstChild;
+    range.setStart(textNode ? textNode : firstText, 0);
+    range.collapse(true);
 }
 /**
  * 修正光标位置,并获取当前光标所在的编辑器/行/文本
  */
 function rangeEls(range, which) {
-    var _a, _b;
     if (which === void 0) { which = "common"; }
     // 光标所在的编辑器
     var editorEl = null;
@@ -149,11 +157,12 @@ function rangeEls(range, which) {
         textEl = (0, _1.createTextTag)(rowEl.children.length > 0 ? const_1.PLACEHOLDER_TEXT : const_1.NEW_LINE);
         rowEl.appendChild(textEl);
     }
-    // 如果光标位置在行或者编辑器中，修正光标位置
-    if (range.commonAncestorContainer === editorEl || range.commonAncestorContainer === rowEl) {
+    // 如果光标位置不在TEXT节点上，修正光标位置
+    if (range.commonAncestorContainer.nodeName !== "#text") {
+        var tNode = textEl.firstChild;
         // 设置光标位置
-        range.setStart(textEl, ((_a = textEl.textContent) === null || _a === void 0 ? void 0 : _a.length) || 0);
-        range.setEnd(textEl, ((_b = textEl.textContent) === null || _b === void 0 ? void 0 : _b.length) || 0);
+        range.setStart(tNode ? tNode : textEl, 0);
+        range.collapse(true);
     }
     return { editorEl: editorEl, rowEl: rowEl, textEl: textEl };
 }
@@ -209,4 +218,57 @@ function isRangeAtTextStart(range) {
     if (((_a = textEl.textContent) === null || _a === void 0 ? void 0 : _a[0]) === const_1.PLACEHOLDER_TEXT && range.startOffset === 1)
         return true;
     return range.startOffset === 0;
+}
+/**
+ * 修正文本标签光标
+ */
+function fixTextRange(range, textEl) {
+    var _a, _b;
+    if (range.startContainer.nodeName === "BR") {
+        var text_1 = (0, _1.createTextNode)();
+        textEl.appendChild(text_1);
+        range.setStart(text_1, 0);
+        range.collapse(true);
+        return;
+    }
+    if (textEl.childNodes.length <= 1)
+        return;
+    if (range.startContainer.nodeName !== "#text" && range.startContainer !== textEl)
+        return;
+    var rangeEl = range.startContainer;
+    var rangeIndex = range.startOffset;
+    if (rangeEl === textEl) {
+        rangeEl = textEl.childNodes[range.startOffset - 1];
+        rangeIndex = ((_a = rangeEl.textContent) === null || _a === void 0 ? void 0 : _a.length) || 0;
+    }
+    for (var i = 0; i < textEl.childNodes.length; i++) {
+        if (rangeEl === textEl.childNodes[i]) {
+            break;
+        }
+        else {
+            rangeIndex += ((_b = textEl.childNodes[i].textContent) === null || _b === void 0 ? void 0 : _b.length) || 0;
+        }
+    }
+    var text = textEl.textContent || "";
+    // 清除所有的占位符和换行符
+    for (var i = 0; i < text.length; i++) {
+        if (i > rangeIndex)
+            break;
+        var t = text[i];
+        if (t === const_1.PLACEHOLDER_TEXT || t === "\n") {
+            rangeIndex -= 1;
+        }
+    }
+    rangeIndex = Math.max(rangeIndex, 0);
+    text = text.replace(new RegExp(const_1.PLACEHOLDER_TEXT, "g"), "");
+    text = text.replace(/\n/g, "");
+    if (!text) {
+        text = const_1.PLACEHOLDER_TEXT;
+        rangeIndex = 1;
+    }
+    textEl.innerHTML = "";
+    var textNode = (0, _1.createTextNode)(text);
+    textEl.appendChild(textNode);
+    range.setStart(textNode, rangeIndex <= text.length ? rangeIndex : text.length);
+    range.collapse(true);
 }

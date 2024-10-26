@@ -32,8 +32,9 @@ function wordWrap() {
     var els = (0, range_1.rangeEls)(range);
     if (!els)
         return;
+    (0, range_1.fixTextRange)(range, els.textEl);
     // 如果光标在当前行末尾
-    if ((0, range_1.isRangeAtRowEnd)(range, els.rowEl)) {
+    if ((0, _1.isEmptyElement)(els.rowEl) || (0, range_1.isRangeAtRowEnd)(range, els.rowEl)) {
         // 在当前行后创建一个新行
         var newRow_1 = (0, _1.createRowTag)();
         els.rowEl.insertAdjacentElement("afterend", newRow_1);
@@ -63,20 +64,9 @@ function wordWrap() {
         }
     }
     emptyEls.forEach(function (el) { var _a; return (_a = el.parentElement) === null || _a === void 0 ? void 0 : _a.removeChild(el); });
-    // 将内容插入到新创建的行中
     var newRow = (0, _1.createElement)("p", { className: const_1.ROW_TAG_CLASS });
-    var fr = (0, _1.createDocumentFragment)();
-    selectedContent.childNodes.forEach(function (node) {
-        if (node.nodeName === "#text") {
-            if (!node.textContent)
-                return;
-            fr.appendChild((0, _1.createTextTag)(node.textContent));
-        }
-        else {
-            fr.appendChild(node.cloneNode(true));
-        }
-    });
-    newRow.appendChild(fr);
+    // 将内容插入到新创建的行中
+    (0, _1.transferElement)(selectedContent, newRow);
     // 修正新的行
     (0, _1.fixRowContent)(newRow);
     // 修正当前行

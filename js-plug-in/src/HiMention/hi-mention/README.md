@@ -130,17 +130,20 @@ new HiMention(element, options);
 | `avatar`  | 否   | 头像                                                 | `string`  |
 | `element` | 否   | 用户列表中展示的元素，若不提供该字段，则使用默认样式 | `Element` |
 
-## 自定义用户列表
+## 自定义
 
-- 如果内置用户列表无法满足需求，可以通过继承 HiMention 组件，以下方法来实现自定义用户列表
+- 如果内置功能如无法满足需求，可以通过继承 HiMention 组件，以下方法来实现自定义用户列表
 
 ### HiMention 接口
 
-| 接口名              | 说明                   | 类型                 | 备注                                      |
-| ------------------- | ---------------------- | -------------------- | ----------------------------------------- |
-| `initUserSelector`  | 方法：初始化用户选择器 | `()=>void`           | -                                         |
-| `closeUserSelector` | 方法：关闭用户选择器   | `()=>void`           | -                                         |
-| `openUserSelector`  | 方法：打开用户列表     | `(query:User)=>void` | `query`:为用户输入`@`时后面跟的查询字符串 |
+| 接口名              | 说明                   | 类型                           | 备注                                      |
+| ------------------- | ---------------------- | ------------------------------ | ----------------------------------------- |
+| `initUserSelector`  | 方法：初始化用户选择器 | `()=>void`                     | -                                         |
+| `closeUserSelector` | 方法：关闭用户选择器   | `()=>void`                     | -                                         |
+| `openUserSelector`  | 方法：打开用户列表     | `(query:User)=>void`           | `query`:为用户输入`@`时后面跟的查询字符串 |
+| `onWordDelete`      | 方法：删除/退格        | `(e: KeyboardEvent)=> boolean` | 返回 `true` 阻止默认事件和触发其他事件    |
+| `onMoveCursor`      | 方法：光标移动         | `(e: KeyboardEvent)=> boolean` | 返回 `true` 阻止默认事件和触发其他事件    |
+| `onWordWrap`        | 方法：换行             | `(e: KeyboardEvent)=> boolean` | 返回 `true` 阻止默认事件和触发其他事件    |
 
 ### HiUserSelector 接口
 
@@ -221,17 +224,7 @@ class MyHiMention extends HiMention {
 }
 ```
 
-## 自定义换行
-
-- 如果内置换行功能无法满足需求，可以通过继承 HiMention 组件，以下方法来实现自定义换行
-
-### HiMention 接口
-
-| 接口名       | 说明                       | 类型                          | 备注 |
-| ------------ | -------------------------- | ----------------------------- | ---- |
-| `onWordWrap` | 方法：监听用户按下换行按键 | `(e: KeyboardEvent): boolean` | -    |
-
-- 继承示例
+### 自定义换行示例
 
 ```javascript
 // 引入插件
@@ -248,12 +241,30 @@ class MyHiMention extends HiMention {
   // 监听用户按下换行按键
   onWordWrap(e: KeyboardEvent): boolean {
     if (["Enter", "NumpadEnter"].includes(e.code)) {
+      // 可重新设置快捷键
       // 调用内置换行方法
-      this.wordWrap();
-      // 如果换行完成请返回true
+      this.wordWrap(); // 可重新设置换行逻辑
+      // 返回true阻止默认事件和触发其他事件
       return true;
     }
     return false; // 没有自行换行，返回false
   }
 }
+```
+# 更新日志
+```html
+v2.1.0 2024-10-26
+- 修复剪切、复制、粘贴 BUG
+- 修复移动光标 BUG
+- 修复换行 BUG
+- 修复删除 BUG
+- 修复焦点 BUG
+- 修复占位符展示异常 BUG
+- 针对火狐浏览器做兼容处理
+
+v2.0.1 2024-10-25
+- 修复默认用户选择器切换用户异常
+
+v2.0.0 2024-10-25
+- 初始版本
 ```

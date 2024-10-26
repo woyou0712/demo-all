@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.insertElement = exports.insertText = exports.createDocumentFragment = exports.createTextNode = exports.fixTextContent = exports.fixRowContent = exports.fixEditorContent = exports.createRowTag = exports.createTextTag = exports.isEmptyElement = exports.createElement = void 0;
+exports.transferElement = exports.insertElement = exports.insertText = exports.createDocumentFragment = exports.createTextNode = exports.fixRowContent = exports.fixEditorContent = exports.createRowTag = exports.createTextTag = exports.isEmptyElement = exports.createElement = void 0;
 var const_1 = require("../const");
 var range_1 = require("./range");
 var createElement = function (type, _a) {
@@ -22,7 +22,13 @@ exports.createElement = createElement;
  * 判断一个标签是否为空标签
  */
 var isEmptyElement = function (el) {
-    return Boolean(!el.textContent || el.textContent === "\n" || el.textContent === const_1.PLACEHOLDER_TEXT);
+    var text = el.innerText;
+    if (!text)
+        text = el.textContent || "";
+    var notContext = !text;
+    var newLine = text === "\n";
+    var isEmpty = text === const_1.PLACEHOLDER_TEXT;
+    return Boolean(notContext || newLine || isEmpty);
 };
 exports.isEmptyElement = isEmptyElement;
 /**
@@ -44,10 +50,9 @@ exports.createRowTag = createRowTag;
  * 修正编辑器内容
  */
 var fixEditorContent = function (editor) {
-    if (!editor.innerText || editor.innerText === "\n" || editor.innerText === const_1.PLACEHOLDER_TEXT) {
+    if ((0, exports.isEmptyElement)(editor)) {
         editor.innerHTML = "";
-        var textTag = (0, exports.createTextTag)(const_1.NEW_LINE);
-        editor.appendChild((0, exports.createElement)("p", { className: const_1.ROW_TAG_CLASS, content: textTag }));
+        editor.appendChild((0, exports.createElement)("p", { className: const_1.ROW_TAG_CLASS, content: (0, exports.createTextTag)(const_1.NEW_LINE) }));
         return true;
     }
     return false;
@@ -56,45 +61,57 @@ exports.fixEditorContent = fixEditorContent;
 /**
  * 修正行内容
  */
-var fixRowContent = function (rowEl) {
-    var _a;
-    if (rowEl.childNodes.length > 1) {
-        var brs = rowEl.querySelectorAll("br");
-        brs.forEach(function (br) { return br.remove(); });
-    }
+var fixRowContent = function (rowEl, rangeTextEl) {
+    var _a, _b;
     if ((0, exports.isEmptyElement)(rowEl)) {
         rowEl.innerHTML = (0, exports.createTextTag)(const_1.NEW_LINE).outerHTML;
+        return;
     }
-    else if (((_a = rowEl.children[rowEl.children.length - 1]) === null || _a === void 0 ? void 0 : _a.className) !== const_1.TEXT_TAG_CLASS) {
-        rowEl.appendChild((0, exports.createTextTag)());
+    if (((_a = rowEl.children[0]) === null || _a === void 0 ? void 0 : _a.className) !== const_1.TEXT_TAG_CLASS) {
+        rowEl.insertBefore((0, exports.createTextTag)(), rowEl.firstChild);
     }
+    if (((_b = rowEl.children[rowEl.children.length - 1]) === null || _b === void 0 ? void 0 : _b.className) !== const_1.TEXT_TAG_CLASS) {
+        rowEl.appendChild((0, exports.createTextTag)(const_1.NEW_LINE));
+    }
+    // 将相邻的空节点合并
+    for (var i = rowEl.childNodes.length - 1; i > 0; i--) {
+        var prev = rowEl.childNodes[i - 1];
+        var next = rowEl.childNodes[i];
+        if ((0, exports.isEmptyElement)(prev) && (0, exports.isEmptyElement)(next)) {
+            // 不改变光标标签
+            if (rangeTextEl && next === rangeTextEl) {
+                prev.remove();
+            }
+            else {
+                next.remove();
+            }
+        }
+    }
+    // 删除br标签
+    var brs = rowEl.querySelectorAll("br");
+    brs.forEach(function (br) { return br.remove(); });
 };
 exports.fixRowContent = fixRowContent;
-/**
- * 修正文本内容
- */
-var fixTextContent = function (textEl) {
-    // 修正文本内容，如果内容长度>1则删除所有的0宽占位符
-    if (textEl.textContent && textEl.textContent.length > 1) {
-        textEl.textContent = textEl.textContent.replace(const_1.PLACEHOLDER_TEXT, "");
-    }
-};
-exports.fixTextContent = fixTextContent;
 var createTextNode = function (text) {
     if (text === void 0) { text = ""; }
     return document.createTextNode(text);
 };
 exports.createTextNode = createTextNode;
-// 创建一个空节点用来装载子元素
-var createDocumentFragment = function (el) {
+/**
+ * 创建一个空节点用来装载子元素
+ * @returns
+ */
+var createDocumentFragment = function () {
     var fr = document.createDocumentFragment();
-    if (el) {
-        fr.appendChild(el);
-    }
     return fr;
 };
 exports.createDocumentFragment = createDocumentFragment;
-// 插入文本
+/**
+ * 插入文本
+ * @param text 文本内容
+ * @param range 光标位置
+ * @returns
+ */
 var insertText = function (text, range) {
     var commonEl = range.commonAncestorContainer;
     if (!["BR", "#text"].includes(commonEl === null || commonEl === void 0 ? void 0 : commonEl.nodeName) && commonEl.className !== const_1.TEXT_TAG_CLASS)
@@ -103,6 +120,7 @@ var insertText = function (text, range) {
         var els = (0, range_1.rangeEls)(range);
         if (!els)
             return false;
+        (0, range_1.fixTextRange)(range, els.textEl);
         els.textEl.removeChild(range.commonAncestorContainer);
         els.textEl.innerHTML = text;
         // 修正光标位置
@@ -113,7 +131,12 @@ var insertText = function (text, range) {
     return true;
 };
 exports.insertText = insertText;
-// 在文本内容中插入元素
+/**
+ * 在文本内容中插入元素
+ * @param el 需要插入的元素
+ * @param range 光标位置
+ * @returns
+ */
 var insertElement = function (el, range) {
     var _a, _b, _c;
     var commonEl = range.commonAncestorContainer;
@@ -122,18 +145,14 @@ var insertElement = function (el, range) {
     var els = (0, range_1.rangeEls)(range);
     if (!els)
         return false;
-    // 如果光标在BR标签上
-    var brs = els.textEl.querySelectorAll("br");
-    if (brs.length) {
-        brs.forEach(function (br) { return br.remove(); });
-    }
+    (0, range_1.fixTextRange)(range, els.textEl);
     // 如果当前文本元素是个空元素
     if (!els.textEl.textContent) {
         var t = (0, exports.createTextNode)(const_1.PLACEHOLDER_TEXT);
         els.textEl.appendChild(t);
         // 修正光标位置
         range.setStart(t, 0);
-        range.setEnd(t, 0);
+        range.collapse(true);
     }
     el.setAttribute("contenteditable", "false");
     // 如果当前光标在文本节点开头，则将元素插入到文本节点之前
@@ -156,7 +175,7 @@ var insertElement = function (el, range) {
         els.textEl.insertAdjacentElement("afterend", el);
         // 更新光标位置
         range.setStart(nextEl, 0);
-        range.setEnd(nextEl, 0);
+        range.collapse(true);
         return true;
     }
     // 如果当前光标在文本节点中间，则将文本节点分割为两个，并将元素插入到中间
@@ -168,7 +187,20 @@ var insertElement = function (el, range) {
     els.textEl.insertAdjacentElement("afterend", el);
     // 更新光标位置
     range.setStart(textEl2.childNodes[0], 0);
-    range.setEnd(textEl2.childNodes[0], 0);
+    range.collapse(true);
     return true;
 };
 exports.insertElement = insertElement;
+/**
+ * 将一个元素的内容转移到另外一个元素下面
+ * @param el 需要移动的元素
+ * @param target 目标元素
+ */
+var transferElement = function (el, target) {
+    var fr = (0, exports.createDocumentFragment)();
+    while (el.firstChild) {
+        fr.appendChild(el.firstChild);
+    }
+    target.appendChild(fr);
+};
+exports.transferElement = transferElement;

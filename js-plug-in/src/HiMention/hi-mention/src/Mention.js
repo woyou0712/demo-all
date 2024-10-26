@@ -20,6 +20,7 @@ var index_1 = require("./utils/index");
 var range_1 = require("./utils/range");
 var wordWrap_1 = __importDefault(require("./utils/wordWrap"));
 var wordDelete_1 = __importDefault(require("./utils/wordDelete"));
+var moveCursor_1 = __importDefault(require("./utils/moveCursor"));
 var Mention = /** @class */ (function () {
     function Mention(el, option) {
         if (option === void 0) { option = {}; }
@@ -37,6 +38,8 @@ var Mention = /** @class */ (function () {
         };
         this.options = (0, const_1.defaultMentionOptions)();
         this._queryStr = "";
+        // 历史记录
+        this._history = [];
         if (!el) {
             throw new Error("Mention: no element provided");
         }
@@ -115,6 +118,16 @@ var Mention = /** @class */ (function () {
             this._onchange(); // 不触发默认行为，需要手动触发change事件
             return;
         }
+        bool = this.undoHistory(e);
+        if (bool) {
+            e.preventDefault();
+            return;
+        }
+        bool = this.onMoveCursor(e);
+        if (bool) {
+            e.preventDefault();
+            return;
+        }
         this._events["keydowns"].forEach(function (fn) { return fn(e); });
     };
     Mention.prototype._onkeyup = function (e) {
@@ -135,22 +148,30 @@ var Mention = /** @class */ (function () {
         var text = (_a = e.clipboardData) === null || _a === void 0 ? void 0 : _a.getData("text/plain");
         if (!text)
             return;
+        var reg = new RegExp("".concat(const_1.PLACEHOLDER_TEXT), "ig");
+        text = text.replace(reg, "");
         var range = (0, range_1.getRangeAt)();
         if (!range)
             return;
+        var els = (0, range_1.rangeEls)(range);
+        if (!els)
+            return;
+        (0, range_1.fixTextRange)(range, els.textEl);
         range.deleteContents();
         range.insertNode(document.createTextNode(text));
         // 修正光标位置
         range.setStart(range.endContainer, range.endOffset);
-        range.setEnd(range.endContainer, range.endOffset);
+        range.collapse(true);
+        // 修正行元素
+        (0, index_1.fixRowContent)(els.rowEl);
         this._inputEvent();
         this._onchange();
     };
     Mention.prototype._onchange = function () {
         var _this = this;
-        var text = this._editorEl.innerText;
-        var reg = new RegExp("^".concat(const_1.PLACEHOLDER_TEXT, "*$"));
-        if (!text || /^\n*$/.test(text) || reg.test(text)) {
+        var text = this._editorEl.textContent;
+        var reg = new RegExp("^[\n".concat(const_1.PLACEHOLDER_TEXT, "\r]*$"));
+        if (!text || reg.test(text)) {
             this._placeholderEl.style.display = "block";
         }
         else {
@@ -158,7 +179,9 @@ var Mention = /** @class */ (function () {
         }
         clearTimeout(this._changetimeout);
         this._changetimeout = setTimeout(function () {
-            _this._events["changes"].forEach(function (fn) { return fn({ text: _this._editorEl.innerText, html: _this._editorEl.innerHTML }); });
+            var html = _this._editorEl.innerHTML;
+            _this._events["changes"].forEach(function (fn) { return fn({ text: _this._editorEl.textContent || "", html: html }); });
+            _this.addHistory();
         }, 300);
     };
     Mention.prototype._inputEvent = function () {
@@ -193,6 +216,26 @@ var Mention = /** @class */ (function () {
         if (!(range === null || range === void 0 ? void 0 : range.commonAncestorContainer))
             return false;
         return (range === null || range === void 0 ? void 0 : range.commonAncestorContainer) === this._editorEl || this._editorEl.contains(range.commonAncestorContainer);
+    };
+    Mention.prototype.addHistory = function () {
+        // 记录内容变化：待开发
+    };
+    Mention.prototype.undoHistory = function (e) {
+        if (e.ctrlKey && ["Z", "z"].includes(e.key)) {
+            console.log("撤销：开发中！！！");
+            return true;
+        }
+        return false;
+    };
+    Mention.prototype.moveCursor = function (direction) {
+        return (0, moveCursor_1.default)(direction);
+    };
+    Mention.prototype.onMoveCursor = function (e) {
+        if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
+            this.moveCursor(e.code);
+            return true;
+        }
+        return false;
     };
     Mention.prototype.wordDelete = function (e) {
         return (0, wordDelete_1.default)(e, this._editorEl);
