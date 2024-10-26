@@ -10,29 +10,24 @@ function wordWrap() {
     if (!range)
         return;
     if (!range.collapsed) {
-        // 删除选中的内容
-        range.deleteContents();
         // 获取开始位置所在的P标签
         var sEls = (0, range_1.rangeEls)(range, "start");
         var eEls = (0, range_1.rangeEls)(range, "end");
         if (!(sEls === null || sEls === void 0 ? void 0 : sEls.rowEl) || !(eEls === null || eEls === void 0 ? void 0 : eEls.rowEl))
             return;
-        // 修正开始行标签
-        (0, _1.fixRowContent)(sEls.rowEl);
-        // 如果开始位置和结束位置不在同一行
+        // 删除选中内容
+        (0, range_1.removeRangeContent)(range, { startEls: sEls, endEls: eEls });
+        // 如果不是同一行，将光标移动到结束行的开头位置
         if (sEls.rowEl !== eEls.rowEl) {
-            // 修正结束行标签
-            (0, _1.fixRowContent)(eEls.rowEl);
-            // 将光标移动到结束P标签的开头
             (0, range_1.moveRangeAtRowStart)(range, eEls.rowEl);
             return;
         }
     }
-    // 获取当前所在的标签
+    // 获取光标当前所在的标签
     var els = (0, range_1.rangeEls)(range);
     if (!els)
         return;
-    (0, range_1.fixTextRange)(range, els.textEl);
+    (0, range_1.fixTextContent)(range, els);
     // 如果光标在当前行末尾
     if ((0, _1.isEmptyElement)(els.rowEl) || (0, range_1.isRangeAtRowEnd)(range, els.rowEl)) {
         // 在当前行后创建一个新行

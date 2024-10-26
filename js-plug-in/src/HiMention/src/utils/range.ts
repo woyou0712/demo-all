@@ -294,11 +294,22 @@ export function removeRangeContent(range: Range, { startEls, endEls, mergeRow }:
     return;
   }
 
+  const setMergeRow = (startRow: HTMLElement, endRow: HTMLElement, _mergeRow?: boolean) => {
+    if (!_mergeRow) return;
+    // 将光标移动到开始标签的末尾
+    moveRangeAtRowEnd(range, sEls.rowEl);
+    // 将结束行的所有内容添加到开始行的末尾
+    transferElement(eEls.rowEl, sEls.rowEl);
+    // 删除结束标签
+    eEls.rowEl.remove();
+  };
+
   // 如果不是同一个文本标签
   // 都是标准文本标签的情况下使用默认删除
   if (sEls.textEl.className === TEXT_TAG_CLASS && eEls.textEl.className === TEXT_TAG_CLASS) {
     // 删除选中内容
     range.deleteContents();
+    setMergeRow(sEls.rowEl, eEls.rowEl, mergeRow);
     return;
   }
   // 获取开始标签下标
@@ -349,14 +360,7 @@ export function removeRangeContent(range: Range, { startEls, endEls, mergeRow }:
   for (let i = eIndex; i >= 0; i--) {
     eEls.rowEl.children[i].remove();
   }
-  if (mergeRow) {
-    // 将光标移动到开始标签的末尾
-    moveRangeAtRowEnd(range, sEls.rowEl);
-    // 将结束标签的所有内容添加到开始标签的末尾
-    transferElement(eEls.textEl, sEls.textEl);
-    // 删除结束标签
-    eEls.textEl.remove();
-  }
+
   return;
 }
 

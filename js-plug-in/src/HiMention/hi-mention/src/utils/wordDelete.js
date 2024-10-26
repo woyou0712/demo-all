@@ -265,19 +265,7 @@ function wordDelete(e, editorEl) {
         var eEls = (0, range_1.rangeEls)(range, "end");
         if (!(sEls === null || sEls === void 0 ? void 0 : sEls.rowEl) || !(eEls === null || eEls === void 0 ? void 0 : eEls.rowEl))
             return false;
-        var _a = [sEls.rowEl, eEls.rowEl], startP = _a[0], endP = _a[1];
-        var startContainer = range.startContainer;
-        var startOffset = range.startOffset;
-        // 如果存在选中内容,删除选中内容
-        range.deleteContents();
-        // 如果开始和结束P标签不一致，将结束标签中的剩余内容复制到开始标签中，并删除结束标签
-        if (startP !== endP) {
-            endP.remove();
-            (0, _1.transferElement)(endP, startP);
-        }
-        // 修正光标位置
-        range.setStart(startContainer, startOffset);
-        range.collapse(true);
+        (0, range_1.removeRangeContent)(range, { startEls: sEls, endEls: eEls, mergeRow: true });
         return true;
     }
     // 获取当前光标所在的P标签
@@ -285,7 +273,7 @@ function wordDelete(e, editorEl) {
     if (!els)
         return true;
     var bool = false;
-    (0, range_1.fixTextRange)(range, els.textEl);
+    (0, range_1.fixTextContent)(range, els);
     if (e.code === "Backspace") {
         bool = onBackspace(range, els);
     }

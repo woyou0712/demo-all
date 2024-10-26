@@ -12,7 +12,7 @@ function moveCursor(type) {
     var els = (0, range_1.rangeEls)(range);
     if (!els)
         return;
-    (0, range_1.fixTextRange)(range, els.textEl);
+    (0, range_1.fixTextContent)(range, els);
     // 判断是否需要换行
     if (type === "ArrowLeft" && (0, range_1.isRangeAtRowStart)(range, els.rowEl)) {
         var newCol = els.rowEl.previousElementSibling;

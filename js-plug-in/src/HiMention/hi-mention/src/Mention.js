@@ -156,12 +156,13 @@ var Mention = /** @class */ (function () {
         var els = (0, range_1.rangeEls)(range);
         if (!els)
             return;
-        (0, range_1.fixTextRange)(range, els.textEl);
-        range.deleteContents();
-        range.insertNode(document.createTextNode(text));
-        // 修正光标位置
-        range.setStart(range.endContainer, range.endOffset);
-        range.collapse(true);
+        if (!range.collapsed) {
+            (0, range_1.removeRangeContent)(range, { startEls: els, endEls: els });
+        }
+        else {
+            (0, range_1.fixTextContent)(range, els);
+        }
+        range.insertNode((0, index_1.createTextNode)(text));
         // 修正行元素
         (0, index_1.fixRowContent)(els.rowEl);
         this._inputEvent();
@@ -333,7 +334,7 @@ var Mention = /** @class */ (function () {
         // 删除选中的内容
         range.deleteContents();
         // 插入span元素
-        (0, index_1.insertElement)(span, range);
+        (0, range_1.insertElement)(span, range);
         this._events["mention-users"].forEach(function (fn) { return fn(user); });
         this._onchange();
         this.closeUserSelector();
@@ -362,7 +363,7 @@ var Mention = /** @class */ (function () {
         var range = (0, range_1.getRangeAt)(0, selection);
         if (!range)
             return this;
-        (0, index_1.insertText)(text, range);
+        (0, range_1.insertText)(text, range);
         this._onchange();
         range.collapse(false);
         selection === null || selection === void 0 ? void 0 : selection.removeAllRanges();
@@ -381,7 +382,7 @@ var Mention = /** @class */ (function () {
         var range = (0, range_1.getRangeAt)(0, selection);
         if (!range)
             return this;
-        (0, index_1.insertElement)(html, range);
+        (0, range_1.insertElement)(html, range);
         this._onchange();
         range.collapse(false);
         selection === null || selection === void 0 ? void 0 : selection.removeAllRanges();

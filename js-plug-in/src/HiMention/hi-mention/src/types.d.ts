@@ -50,3 +50,8 @@ export interface OnEvents {
     }) => void)[];
     "mention-users": ((user?: UserInfo) => void)[];
 }
+export interface RangeElsType {
+    editorEl: HTMLElement;
+    rowEl: HTMLElement;
+    textEl: HTMLElement;
+}
