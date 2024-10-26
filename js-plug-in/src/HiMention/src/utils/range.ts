@@ -109,7 +109,7 @@ export function rangeEls(range: Range, which: "end" | "start" | "common" = "comm
   if (!el) return null;
   // 向上找节点，最多找10层
   for (let i = 0; i < 10 && !editorEl; i++) {
-    if (el.className === TEXT_TAG_CLASS) {
+    if (el.className === TEXT_TAG_CLASS || el.parentElement?.className === ROW_TAG_CLASS) {
       textEl = el;
     } else if (el.className === ROW_TAG_CLASS) {
       rowEl = el;
@@ -120,9 +120,7 @@ export function rangeEls(range: Range, which: "end" | "start" | "common" = "comm
     el = el.parentElement as HTMLElement;
   }
   if (!editorEl) return null;
-  if (textEl && rowEl) return { editorEl, rowEl, textEl };
-
-  if (which !== "common") return null;
+  if (which !== "common" && textEl && rowEl) return { editorEl, rowEl, textEl };
 
   // 查找当前光标，如果光标不在文本标签中，修正光标位置
   if (!rowEl) {
