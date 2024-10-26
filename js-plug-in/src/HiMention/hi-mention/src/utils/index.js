@@ -149,7 +149,8 @@ function isNeedFix(textEl) {
         if (textNodeNum > 1)
             return true;
     }
-    return new RegExp("\n|".concat(const_1.PLACEHOLDER_TEXT, "|\r")).test(text);
+    var br = textEl.querySelector("br");
+    return Boolean(br || new RegExp("\n|".concat(const_1.PLACEHOLDER_TEXT, "|\r")).test(text));
 }
 /**
  * 格式化字符串，删除字符串中的\n和连续的\r

@@ -135,7 +135,8 @@ export function isNeedFix(textEl: HTMLElement): boolean {
     if (textEl.childNodes[i].textContent) textNodeNum++;
     if (textNodeNum > 1) return true;
   }
-  return new RegExp(`\n|${PLACEHOLDER_TEXT}|\r`).test(text);
+  const br = textEl.querySelector("br");
+  return Boolean(br || new RegExp(`\n|${PLACEHOLDER_TEXT}|\r`).test(text));
 }
 
 /**
