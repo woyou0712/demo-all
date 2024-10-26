@@ -1,5 +1,5 @@
 import { RangeElsType } from "../types";
-import { createElement, createTextNode, createTextTag, formatString, transferElement } from ".";
+import { createElement, createTextNode, createTextTag, formatString, isNeedFix, transferElement } from ".";
 import { EDITOR_CLASS, NEW_LINE, PLACEHOLDER_TEXT, ROW_TAG_CLASS, TEXT_TAG_CLASS } from "../const";
 
 export function getSelection() {
@@ -214,9 +214,15 @@ export function isRangeAtTextStart(range: Range) {
 }
 
 /**
- * 修正文本标签光标
+ * 修正文本标签内容
  */
-export function fixTextRange(range: Range, textEl: HTMLElement): void {
+export function fixTextContent(range: Range, els?: RangeElsType): void {
+  const _els = els || rangeEls(range);
+  if (!_els) return;
+  const { textEl } = _els;
+  if (!isNeedFix(textEl.textContent || "")) return;
+
+  if (textEl.className !== TEXT_TAG_CLASS) return;
   if (range.startContainer.nodeName === "BR") {
     const br = range.startContainer as HTMLElement;
     const text = createTextNode();
@@ -229,45 +235,36 @@ export function fixTextRange(range: Range, textEl: HTMLElement): void {
     }
     return;
   }
-  if (textEl.childNodes.length <= 1) return;
-  const brs = textEl.querySelectorAll("br");
-  brs.forEach((br) => br.remove());
-  if (range.startContainer.nodeName == "#text" && range.startContainer !== textEl) return;
-  let rangeEl = range.startContainer as HTMLElement;
+  if (Number(textEl.textContent?.length) <= 1) return;
+
+  const rangeEl = range.startContainer as HTMLElement;
   let rangeIndex = range.startOffset;
+  let nodeIndex = 0;
   if (rangeEl === textEl) {
-    rangeEl = textEl.childNodes[range.startOffset - 1] as HTMLElement;
-    rangeIndex = rangeEl.textContent?.length || 0;
+    nodeIndex = rangeIndex - 1;
+    rangeIndex = 0;
+  } else if (rangeEl.nodeName === "#text") {
+    nodeIndex = Array.from(textEl.childNodes).indexOf(rangeEl);
   }
-
-  for (let i = 0; i < textEl.childNodes.length; i++) {
-    if (rangeEl === textEl.childNodes[i]) {
-      break;
+  // 获取光标两边的内容
+  let prevText = "";
+  let nextText = "";
+  textEl.childNodes.forEach((node, index) => {
+    if (index < nodeIndex) {
+      prevText += node.textContent || "";
+    } else if (index > nodeIndex) {
+      nextText += node.textContent || "";
     } else {
-      rangeIndex += textEl.childNodes[i].textContent?.length || 0;
+      prevText += node.textContent?.slice(0, rangeIndex) || "";
+      nextText += node.textContent?.slice(rangeIndex) || "";
     }
-  }
-
-  let text = textEl.textContent || "";
-  // 清除所有的占位符和换行符
-  for (let i = 0; i < text.length; i++) {
-    if (i > rangeIndex) break;
-    const t = text[i];
-    if (t === PLACEHOLDER_TEXT || t === "\n") {
-      rangeIndex -= 1;
-    }
-  }
-  rangeIndex = Math.max(rangeIndex, 0);
-  text = text.replace(new RegExp(PLACEHOLDER_TEXT, "g"), "");
-  text = text.replace(/\n/g, "");
-  if (!text) {
-    text = PLACEHOLDER_TEXT;
-    rangeIndex = 1;
-  }
+  });
+  prevText = formatString(prevText);
+  nextText = formatString(nextText);
+  const textNode = createTextNode(prevText + nextText);
   textEl.innerHTML = "";
-  const textNode = createTextNode(text);
   textEl.appendChild(textNode);
-  range.setStart(textNode, rangeIndex <= text.length ? rangeIndex : text.length);
+  range.setStart(textNode, prevText.length);
   range.collapse(true);
 }
 
@@ -284,8 +281,12 @@ export function removeRangeContent(range: Range, { startEls, endEls, mergeRow }:
   if (sEls.textEl === eEls.textEl) {
     // 是标准文本标签
     if (sEls.textEl.className === TEXT_TAG_CLASS) {
+      const rangeEl = range.startContainer as HTMLElement;
+      const rangeIndex = range.startOffset;
       // 删除选中内容
       range.deleteContents();
+      range.setStart(rangeEl, rangeIndex);
+      range.collapse(true);
       return;
     }
     // 删除标签
@@ -371,11 +372,9 @@ export function insertText(text: string, range: Range): boolean {
   if (commonEl.nodeName === "BR") {
     const els = rangeEls(range);
     if (!els) return false;
-    fixTextRange(range, els.textEl);
-    els.textEl.removeChild(range.commonAncestorContainer as HTMLElement);
+    commonEl.parentElement?.removeChild(commonEl);
     els.textEl.innerHTML = text;
-    // 修正光标位置
-    moveRangeAtRowEnd(range, els.rowEl);
+    fixTextContent(range, els);
     return true;
   }
   range.insertNode(createTextNode(text));
@@ -393,7 +392,7 @@ export function insertElement(el: HTMLElement, range: Range): boolean {
   if (!["BR", "#text"].includes(commonEl?.nodeName) && commonEl.className !== TEXT_TAG_CLASS) return false;
   const els = rangeEls(range);
   if (!els) return false;
-  fixTextRange(range, els.textEl);
+  fixTextContent(range, els);
   // 如果当前文本元素是个空元素
   if (!els.textEl.textContent) {
     const t = createTextNode(PLACEHOLDER_TEXT);

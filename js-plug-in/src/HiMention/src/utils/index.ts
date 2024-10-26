@@ -76,9 +76,6 @@ export function fixRowContent(rowEl: HTMLElement, rangeTextEl?: HTMLElement): vo
       }
     }
   }
-  // 删除br标签
-  const brs = rowEl.querySelectorAll("br");
-  brs.forEach((br) => br.remove());
 }
 
 export function createTextNode(text = ""): Text {
@@ -125,6 +122,14 @@ export function transferElement(el: Element | Node, target: HTMLElement | Node) 
     fr.appendChild(el);
   });
   target.appendChild(fr);
+}
+
+/**
+ * 判断文本内容是否需要修正
+ */
+export function isNeedFix(text?: string): boolean {
+  if (!text) return false;
+  return new RegExp(`\n|${PLACEHOLDER_TEXT}|\r`).test(text);
 }
 
 /**

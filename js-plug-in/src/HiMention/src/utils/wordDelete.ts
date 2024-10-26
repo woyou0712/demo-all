@@ -1,6 +1,6 @@
 import { NEW_LINE, PLACEHOLDER_TEXT, TEXT_TAG_CLASS } from "../const";
 import { createTextTag, fixEditorContent, fixRowContent, isEmptyElement, transferElement } from ".";
-import { fixTextRange, getRangeAt, isRangeAtRowEnd, isRangeAtRowStart, isRangeAtTextEnd, isRangeAtTextStart, moveRangeAtEditorEnd, moveRangeAtRowEnd, moveRangeAtRowStart, rangeEls, removeRangeContent } from "./range";
+import { fixTextContent, getRangeAt, isRangeAtRowEnd, isRangeAtRowStart, isRangeAtTextEnd, isRangeAtTextStart, moveRangeAtEditorEnd, moveRangeAtRowEnd, moveRangeAtRowStart, rangeEls, removeRangeContent } from "./range";
 
 function onDelete(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; textEl: HTMLElement }): true {
   const rangeNode = range.commonAncestorContainer;
@@ -268,7 +268,7 @@ export default function wordDelete(e: KeyboardEvent, editorEl: HTMLElement) {
   let els = rangeEls(range);
   if (!els) return true;
   let bool = false;
-  fixTextRange(range, els.textEl);
+  fixTextContent(range, els);
   if (e.code === "Backspace") {
     bool = onBackspace(range, els);
   }

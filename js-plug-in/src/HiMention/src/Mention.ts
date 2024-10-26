@@ -1,8 +1,8 @@
 import { defaultMentionOptions, EDITOR_CLASS, PLACEHOLDER_TEXT } from "./const";
 import UserSelector from "./UserSelector";
-import { createElement, fixEditorContent, fixRowContent } from "./utils/index";
+import { createElement, createTextNode, fixEditorContent, fixRowContent, isNeedFix } from "./utils/index";
 import { OnEvents, MentionOptions, UserInfo, EventsType } from "./types";
-import { fixTextRange, getRangeAt, getSelection, moveRangeAtEditorEnd, rangeEls, insertText, insertElement } from "./utils/range";
+import { fixTextContent, getRangeAt, getSelection, moveRangeAtEditorEnd, rangeEls, insertText, insertElement, removeRangeContent } from "./utils/range";
 import wordWrap from "./utils/wordWrap";
 import wordDelete from "./utils/wordDelete";
 import moveCursor from "./utils/moveCursor";
@@ -160,12 +160,12 @@ class Mention {
     if (!range) return;
     const els = rangeEls(range);
     if (!els) return;
-    fixTextRange(range, els.textEl);
-    range.deleteContents();
-    range.insertNode(document.createTextNode(text));
-    // 修正光标位置
-    range.setStart(range.endContainer, range.endOffset);
-    range.collapse(true);
+    if (!range.collapsed) {
+      removeRangeContent(range, { startEls: els, endEls: els });
+    } else {
+      fixTextContent(range, els);
+    }
+    range.insertNode(createTextNode(text));
     // 修正行元素
     fixRowContent(els.rowEl);
     this._inputEvent();

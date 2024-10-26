@@ -1,13 +1,14 @@
 import { PLACEHOLDER_TEXT, TEXT_TAG_CLASS } from "../const";
 import { isEmptyElement } from ".";
-import { fixTextRange, getRangeAt, isRangeAtRowEnd, isRangeAtRowStart, moveRangeAtRowEnd, moveRangeAtRowStart, rangeEls } from "./range";
+import { fixTextContent, getRangeAt, isRangeAtRowEnd, isRangeAtRowStart, moveRangeAtRowEnd, moveRangeAtRowStart, rangeEls } from "./range";
 
 export default function moveCursor(type: "ArrowLeft" | "ArrowRight") {
   const range = getRangeAt();
   if (!range) return;
   const els = rangeEls(range);
   if (!els) return;
-  fixTextRange(range, els.textEl);
+  fixTextContent(range, els);
+
   // 判断是否需要换行
   if (type === "ArrowLeft" && isRangeAtRowStart(range, els.rowEl)) {
     const newCol = els.rowEl.previousElementSibling as HTMLElement;

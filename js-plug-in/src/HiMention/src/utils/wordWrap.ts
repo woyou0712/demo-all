@@ -1,6 +1,6 @@
 import { ROW_TAG_CLASS, TEXT_TAG_CLASS } from "../const";
 import { createElement, createRowTag, fixRowContent, isEmptyElement, transferElement } from ".";
-import { rangeEls, getRangeAt, moveRangeAtRowStart, getSelection, isRangeAtRowEnd, fixTextRange, removeRangeContent } from "./range";
+import { rangeEls, getRangeAt, moveRangeAtRowStart, getSelection, isRangeAtRowEnd, fixTextContent, removeRangeContent } from "./range";
 
 export default function wordWrap() {
   const selection = getSelection();
@@ -22,7 +22,7 @@ export default function wordWrap() {
   // 获取光标当前所在的标签
   let els = rangeEls(range);
   if (!els) return;
-  fixTextRange(range, els.textEl);
+  fixTextContent(range, els);
   // 如果光标在当前行末尾
   if (isEmptyElement(els.rowEl) || isRangeAtRowEnd(range, els.rowEl)) {
     // 在当前行后创建一个新行
