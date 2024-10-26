@@ -1,30 +1,25 @@
 import { ROW_TAG_CLASS, TEXT_TAG_CLASS } from "../const";
 import { createElement, createRowTag, fixRowContent, isEmptyElement, transferElement } from ".";
-import { rangeEls, getRangeAt, moveRangeAtRowStart, getSelection, isRangeAtRowEnd, fixTextRange } from "./range";
+import { rangeEls, getRangeAt, moveRangeAtRowStart, getSelection, isRangeAtRowEnd, fixTextRange, removeRangeContent } from "./range";
 
 export default function wordWrap() {
   const selection = getSelection();
   const range = getRangeAt(0, selection);
   if (!range) return;
   if (!range.collapsed) {
-    // 删除选中的内容
-    range.deleteContents();
     // 获取开始位置所在的P标签
     const sEls = rangeEls(range, "start");
     const eEls = rangeEls(range, "end");
     if (!sEls?.rowEl || !eEls?.rowEl) return;
-    // 修正开始行标签
-    fixRowContent(sEls.rowEl);
-    // 如果开始位置和结束位置不在同一行
+    // 删除选中内容
+    removeRangeContent(range, { startEls: sEls, endEls: eEls });
+    // 如果不是同一行，将光标移动到结束行的开头位置
     if (sEls.rowEl !== eEls.rowEl) {
-      // 修正结束行标签
-      fixRowContent(eEls.rowEl);
-      // 将光标移动到结束P标签的开头
       moveRangeAtRowStart(range, eEls.rowEl);
       return;
     }
   }
-  // 获取当前所在的标签
+  // 获取光标当前所在的标签
   let els = rangeEls(range);
   if (!els) return;
   fixTextRange(range, els.textEl);

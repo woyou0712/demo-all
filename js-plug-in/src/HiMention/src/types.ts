@@ -50,3 +50,9 @@ export interface OnEvents {
   changes: ((data?: { text: string; html: string }) => void)[];
   "mention-users": ((user?: UserInfo) => void)[];
 }
+
+export interface RangeElsType {
+  editorEl: HTMLElement;
+  rowEl: HTMLElement;
+  textEl: HTMLElement;
+}

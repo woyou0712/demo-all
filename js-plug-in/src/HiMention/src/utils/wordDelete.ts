@@ -1,6 +1,6 @@
 import { NEW_LINE, PLACEHOLDER_TEXT, TEXT_TAG_CLASS } from "../const";
 import { createTextTag, fixEditorContent, fixRowContent, isEmptyElement, transferElement } from ".";
-import { fixTextRange, getRangeAt, isRangeAtRowEnd, isRangeAtRowStart, isRangeAtTextEnd, isRangeAtTextStart, moveRangeAtEditorEnd, moveRangeAtRowEnd, moveRangeAtRowStart, rangeEls } from "./range";
+import { fixTextRange, getRangeAt, isRangeAtRowEnd, isRangeAtRowStart, isRangeAtTextEnd, isRangeAtTextStart, moveRangeAtEditorEnd, moveRangeAtRowEnd, moveRangeAtRowStart, rangeEls, removeRangeContent } from "./range";
 
 function onDelete(range: Range, { rowEl, textEl }: { rowEl: HTMLElement; textEl: HTMLElement }): true {
   const rangeNode = range.commonAncestorContainer;
@@ -261,19 +261,7 @@ export default function wordDelete(e: KeyboardEvent, editorEl: HTMLElement) {
     const sEls = rangeEls(range, "start");
     const eEls = rangeEls(range, "end");
     if (!sEls?.rowEl || !eEls?.rowEl) return false;
-    const [startP, endP] = [sEls.rowEl, eEls.rowEl];
-    const startContainer = range.startContainer;
-    const startOffset = range.startOffset;
-    // 如果存在选中内容,删除选中内容
-    range.deleteContents();
-    // 如果开始和结束P标签不一致，将结束标签中的剩余内容复制到开始标签中，并删除结束标签
-    if (startP !== endP) {
-      endP.remove();
-      transferElement(endP, startP);
-    }
-    // 修正光标位置
-    range.setStart(startContainer, startOffset);
-    range.collapse(true);
+    removeRangeContent(range, { startEls: sEls, endEls: eEls, mergeRow: true });
     return true;
   }
   // 获取当前光标所在的P标签
