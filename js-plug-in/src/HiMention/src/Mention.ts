@@ -1,8 +1,8 @@
 import { defaultMentionOptions, EDITOR_CLASS, PLACEHOLDER_TEXT } from "./const";
 import UserSelector from "./UserSelector";
-import { createElement, createTextNode, fixEditorContent, fixRowContent } from "./utils/index";
+import { createElement, createTextNode, fixEditorContent, fixRowContent, isEmptyElement } from "./utils/index";
 import { OnEvents, MentionOptions, UserInfo, EventsType } from "./types";
-import { fixTextContent, getRangeAt, getSelection, moveRangeAtEditorEnd, rangeEls, insertText, insertElement, removeRangeContent } from "./utils/range";
+import { fixTextContent, getRangeAt, getSelection, moveRangeAtEditorEnd, rangeEls, insertText, insertElement, removeRangeContent, moveRangeAtRowStart, moveRangeAtRowEnd } from "./utils/range";
 import wordWrap from "./utils/wordWrap";
 import wordDelete from "./utils/wordDelete";
 import moveCursor from "./utils/moveCursor";
@@ -122,12 +122,22 @@ class Mention {
       this._onchange(); // 不触发默认行为，需要手动触发change事件
       return;
     }
+    bool = this.onMoveCursor(e);
+    if (bool) {
+      e.preventDefault();
+      return;
+    }
     bool = this.undoHistory(e);
     if (bool) {
       e.preventDefault();
       return;
     }
-    bool = this.onMoveCursor(e);
+    bool = this.onSelectAll(e);
+    if (bool) {
+      e.preventDefault();
+      return;
+    }
+    bool = this.onShearContent(e);
     if (bool) {
       e.preventDefault();
       return;
@@ -223,6 +233,37 @@ class Mention {
   protected undoHistory(e: KeyboardEvent) {
     if (e.ctrlKey && ["Z", "z"].includes(e.key)) {
       console.log("撤销：开发中！！！");
+      return true;
+    }
+    return false;
+  }
+
+  protected selectAll() {
+    if (isEmptyElement(this._editorEl)) return;
+    const range = getRangeAt();
+    if (!range) return;
+    const tRow = this._editorEl.children[0] as HTMLElement;
+    const tfow = this._editorEl.children[this._editorEl.children.length - 1] as HTMLElement;
+    if (tRow) moveRangeAtRowStart(range, tRow, false);
+    if (tfow) moveRangeAtRowEnd(range, tfow, false);
+  }
+
+  protected onSelectAll(e: KeyboardEvent) {
+    if (e.ctrlKey && ["A", "a"].includes(e.key)) {
+      this.selectAll();
+      return true;
+    }
+    return false;
+  }
+
+  protected shearContent() {
+    console.log("剪切：开发中！！！");
+    return true;
+  }
+
+  protected onShearContent(e: KeyboardEvent) {
+    if (e.ctrlKey && ["X", "x"].includes(e.key)) {
+      this.shearContent();
       return true;
     }
     return false;
