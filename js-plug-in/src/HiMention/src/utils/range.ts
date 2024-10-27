@@ -123,7 +123,7 @@ export function rangeEls(range: Range, which: "end" | "start" | "common" = "comm
   }
   if (!editorEl) return null;
 
-  if (!rowEl) {
+  if (!rowEl || rowEl.className !== ROW_TAG_CLASS) {
     // 如果不在行内，则将当前光标所在的内容全部转移到新的一行
     const textContent = rangeEl.textContent;
     rangeEl.remove();
@@ -144,7 +144,7 @@ export function rangeEls(range: Range, which: "end" | "start" | "common" = "comm
     }
     rangeIndex = which === "start" ? 0 : rowEl.childNodes.length;
   }
-  if (!textEl) {
+  if (!textEl || textEl.nodeName === "#text") {
     // 如果不在行内，则将当前光标所在的内容全部转移到新的一行
     const textContent = rangeEl.textContent;
     rangeEl.remove();
