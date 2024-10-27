@@ -99,7 +99,7 @@ export function rangeEls(range: Range, which: "end" | "start" | "common" = "comm
   let rowEl: HTMLElement | null = null;
   // 光标所在的文本
   let textEl: HTMLElement | null = null;
-  let rangeEl: HTMLElement;
+  let rangeEl: HTMLElement | Text;
   let rangeIndex = which === "start" ? range.startOffset : range.endOffset;
   if (which === "end") {
     rangeEl = range.endContainer as HTMLElement;
@@ -124,24 +124,31 @@ export function rangeEls(range: Range, which: "end" | "start" | "common" = "comm
   if (!editorEl) return null;
 
   if (!rowEl) {
+    // 如果不在行内，则将当前光标所在的内容全部转移到新的一行
+    const textContent = rangeEl.textContent;
+    rangeEl.remove();
     const index = rangeIndex > editorEl.childNodes.length - 1 ? editorEl.childNodes.length - 1 : rangeIndex;
     rowEl = editorEl.childNodes[index] as HTMLElement;
     if (!rowEl || rowEl.className !== ROW_TAG_CLASS) {
-      textEl = createTextTag(NEW_LINE);
+      textEl = createTextTag(textContent ? textContent : NEW_LINE);
       rowEl = createElement("p", { className: ROW_TAG_CLASS });
+      rowEl.appendChild(textEl);
       editorEl.appendChild(rowEl);
     }
     if (!textEl) {
       textEl = rowEl.children[rowEl.children.length - 1] as HTMLElement;
       if (textEl.className !== TEXT_TAG_CLASS) {
-        textEl = createTextTag(NEW_LINE);
+        textEl = createTextTag(textContent ? textContent : NEW_LINE);
         rowEl.appendChild(textEl);
       }
     }
     rangeIndex = which === "start" ? 0 : rowEl.childNodes.length;
   }
   if (!textEl) {
-    textEl = createTextTag(rowEl.children.length > 0 ? PLACEHOLDER_TEXT : NEW_LINE);
+    // 如果不在行内，则将当前光标所在的内容全部转移到新的一行
+    const textContent = rangeEl.textContent;
+    rangeEl.remove();
+    textEl = createTextTag(textContent ? textContent : rowEl.children.length > 0 ? PLACEHOLDER_TEXT : NEW_LINE);
     rowEl.appendChild(textEl);
     rangeIndex = which === "start" ? 0 : rowEl.childNodes.length;
   }

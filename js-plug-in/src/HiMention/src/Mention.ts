@@ -108,7 +108,6 @@ class Mention {
   }
 
   private _onkeydown(e: KeyboardEvent) {
-    this.beforeInput(e);
     let bool = this.onWordWrap(e);
     if (bool) {
       e.preventDefault();
@@ -226,12 +225,8 @@ class Mention {
     return range?.commonAncestorContainer === this._editorEl || this._editorEl.contains(range.commonAncestorContainer);
   }
 
-  protected beforeInput(e: KeyboardEvent) {
-    //
-  }
-
   protected onUndoHistory(e: KeyboardEvent) {
-    if (e.ctrlKey && ["Z", "z"].includes(e.key)) {
+    if (e.ctrlKey && e.code === "KeyZ") {
       console.log("撤销：开发中！！！");
       return true;
     }
@@ -249,7 +244,7 @@ class Mention {
   }
 
   protected onSelectAll(e: KeyboardEvent) {
-    if (e.ctrlKey && ["A", "a"].includes(e.key)) {
+    if (e.ctrlKey && e.code === "KeyA") {
       this.selectAll();
       return true;
     }
@@ -280,7 +275,7 @@ class Mention {
   }
 
   protected onShearContent(e: KeyboardEvent) {
-    if (e.ctrlKey && ["X", "x"].includes(e.key)) {
+    if (e.ctrlKey && e.code === "KeyX") {
       this.shearContent();
       return true;
     }

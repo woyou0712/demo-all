@@ -1,13 +1,18 @@
 import { NEW_LINE, PLACEHOLDER_TEXT, ROW_TAG_CLASS, TEXT_TAG_CLASS } from "../const";
 
-export function createElement<K extends keyof HTMLElementTagNameMap>(type: K, { className, style, content }: { className?: string; style?: { [key: string]: string }; content?: string | HTMLElement } = {}): HTMLElementTagNameMap[K] {
+export function createElement<K extends keyof HTMLElementTagNameMap>(
+  type: K,
+  { className, style, content }: { className?: string; style?: { [key: string]: string }; content?: string | HTMLElement | Text | Node | Element } = {}
+): HTMLElementTagNameMap[K] {
   const element = document.createElement(type);
   if (className) element.className = className;
   if (style) {
     Object.keys(style).forEach((key) => (element.style[key as any] = style[key]));
   }
-  if (content && typeof content === "string") element.innerHTML = content;
-  else if (content && typeof content === "object") element.appendChild(content);
+  if (content) {
+    if (typeof content === "string") element.innerHTML = content;
+    else element.appendChild(content);
+  }
   return element;
 }
 
@@ -26,7 +31,7 @@ export function isEmptyElement(el: HTMLElement | Node): boolean {
 /**
  * 创建一个文本标签
  */
-export function createTextTag(content: string = PLACEHOLDER_TEXT): HTMLElement {
+export function createTextTag(content: string | Text = PLACEHOLDER_TEXT): HTMLElement {
   return createElement("span", { className: TEXT_TAG_CLASS, content });
 }
 
