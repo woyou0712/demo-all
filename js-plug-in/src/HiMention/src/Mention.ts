@@ -108,18 +108,19 @@ class Mention {
   }
 
   private _onkeydown(e: KeyboardEvent) {
+    this.beforeInput(e);
     let bool = this.onWordWrap(e);
     if (bool) {
       e.preventDefault();
-      this._inputEvent();
       this._onchange(); // 不触发默认行为，需要手动触发change事件
+      this._inputEvent();
       return;
     }
     bool = this.onWordDelete(e);
     if (bool) {
       e.preventDefault();
-      this._inputEvent();
       this._onchange(); // 不触发默认行为，需要手动触发change事件
+      this._inputEvent();
       return;
     }
     bool = this.onMoveCursor(e);
@@ -127,7 +128,7 @@ class Mention {
       e.preventDefault();
       return;
     }
-    bool = this.undoHistory(e);
+    bool = this.onUndoHistory(e);
     if (bool) {
       e.preventDefault();
       return;
@@ -156,8 +157,8 @@ class Mention {
   }
 
   private _oncut(e: ClipboardEvent) {
-    this._inputEvent();
     this._onchange();
+    this._inputEvent();
   }
 
   private _onpaste(e: ClipboardEvent) {
@@ -178,11 +179,14 @@ class Mention {
     range.insertNode(createTextNode(text));
     // 修正行元素
     fixRowContent(els.rowEl);
-    this._inputEvent();
     this._onchange();
+    this._inputEvent();
   }
 
   private _onchange() {
+    if (fixEditorContent(this._editorEl)) {
+      this.focus();
+    }
     const text = this._editorEl.textContent;
     const reg = new RegExp(`^[\n${PLACEHOLDER_TEXT}\r]*$`);
     if (!text || reg.test(text)) {
@@ -194,14 +198,10 @@ class Mention {
     this._changetimeout = setTimeout(() => {
       const html = this._editorEl.innerHTML;
       this._events["changes"].forEach((fn) => fn({ text: this._editorEl.textContent || "", html }));
-      this.addHistory();
     }, 300);
   }
 
   private _inputEvent() {
-    if (fixEditorContent(this._editorEl)) {
-      this.focus();
-    }
     const selection = getSelection();
     if (!selection?.anchorNode?.textContent) return this.closeUserSelector();
     const text = selection.anchorNode.textContent.slice(0, selection.anchorOffset);
@@ -226,11 +226,11 @@ class Mention {
     return range?.commonAncestorContainer === this._editorEl || this._editorEl.contains(range.commonAncestorContainer);
   }
 
-  protected addHistory() {
-    // 记录内容变化：待开发
+  protected beforeInput(e: KeyboardEvent) {
+    //
   }
 
-  protected undoHistory(e: KeyboardEvent) {
+  protected onUndoHistory(e: KeyboardEvent) {
     if (e.ctrlKey && ["Z", "z"].includes(e.key)) {
       console.log("撤销：开发中！！！");
       return true;
@@ -257,7 +257,25 @@ class Mention {
   }
 
   protected shearContent() {
-    console.log("剪切：开发中！！！");
+    const range = getRangeAt();
+    if (!range) return;
+    if (!range.collapsed) {
+      const content = removeRangeContent(range);
+      this._onchange();
+      this._inputEvent();
+      // 将内容写入剪切板
+      if (content) {
+        setTimeout(async () => {
+          try {
+            // 将文本写入剪贴板
+            await navigator.clipboard.writeText(content);
+            console.info("剪切板写入内容:", content);
+          } catch (err) {
+            console.error("内容写入剪切板失败: ", err);
+          }
+        });
+      }
+    }
     return true;
   }
 
