@@ -5,8 +5,11 @@ declare class Mention {
     protected options: MentionOptions;
     userSelector?: UserSelector;
     constructor(el: Element | HTMLElement | string, option?: Partial<MentionOptions>);
-    protected addHistory(): void;
-    protected undoHistory(e: KeyboardEvent): boolean;
+    protected onUndoHistory(e: KeyboardEvent): boolean;
+    protected selectAll(): void;
+    protected onSelectAll(e: KeyboardEvent): boolean;
+    protected shearContent(): true | undefined;
+    protected onShearContent(e: KeyboardEvent): boolean;
     protected moveCursor(direction: "ArrowLeft" | "ArrowRight"): void;
     protected onMoveCursor(e: KeyboardEvent): boolean;
     protected wordDelete(e: KeyboardEvent): boolean;

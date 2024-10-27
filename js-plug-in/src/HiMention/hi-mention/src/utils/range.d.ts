@@ -13,11 +13,11 @@ export declare function moveRangeAtEditorEnd(range: Range, editorEl: HTMLElement
 /**
  * 将光标位置移动到当前行的末尾
  */
-export declare function moveRangeAtRowEnd(range: Range, rowEl: HTMLElement): void;
+export declare function moveRangeAtRowEnd(range: Range, rowEl: HTMLElement, merge?: boolean): void;
 /**
  * 将光标位置移动到当前行的开头
  */
-export declare function moveRangeAtRowStart(range: Range, rowEl: HTMLElement): void;
+export declare function moveRangeAtRowStart(range: Range, rowEl: HTMLElement, merge?: boolean): void;
 /**
  * 修正光标位置,并获取当前光标所在的编辑器/行/文本
  */
@@ -49,7 +49,7 @@ export declare function removeRangeContent(range: Range, { startEls, endEls, mer
     startEls?: RangeElsType;
     endEls?: RangeElsType;
     mergeRow?: boolean;
-}): void;
+}): string;
 /**
  * 在光标位置插入文本
  * @param text 文本内容

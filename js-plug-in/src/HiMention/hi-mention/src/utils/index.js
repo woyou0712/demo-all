@@ -20,10 +20,12 @@ function createElement(type, _a) {
     if (style) {
         Object.keys(style).forEach(function (key) { return (element.style[key] = style[key]); });
     }
-    if (content && typeof content === "string")
-        element.innerHTML = content;
-    else if (content && typeof content === "object")
-        element.appendChild(content);
+    if (content) {
+        if (typeof content === "string")
+            element.innerHTML = content;
+        else
+            element.appendChild(content);
+    }
     return element;
 }
 /**

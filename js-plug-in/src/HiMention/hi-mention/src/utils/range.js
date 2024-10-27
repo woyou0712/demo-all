@@ -68,8 +68,9 @@ function moveRangeAtEditorEnd(range, editorEl) {
 /**
  * 将光标位置移动到当前行的末尾
  */
-function moveRangeAtRowEnd(range, rowEl) {
+function moveRangeAtRowEnd(range, rowEl, merge) {
     var _a;
+    if (merge === void 0) { merge = true; }
     // 获取最后一个文本标签
     var lastText = rowEl.children[rowEl.children.length - 1];
     if (!lastText || lastText.className !== const_1.TEXT_TAG_CLASS) {
@@ -82,13 +83,15 @@ function moveRangeAtRowEnd(range, rowEl) {
     var textNode = lastText.lastChild;
     var lastTextLength = (textNode ? (_a = textNode.textContent) === null || _a === void 0 ? void 0 : _a.length : lastText.childNodes.length) || 0;
     // 设置光标位置
-    range.setStart(textNode ? textNode : lastText, lastTextLength);
-    range.collapse(true);
+    range.setEnd(textNode ? textNode : lastText, lastTextLength);
+    if (merge)
+        range.collapse();
 }
 /**
  * 将光标位置移动到当前行的开头
  */
-function moveRangeAtRowStart(range, rowEl) {
+function moveRangeAtRowStart(range, rowEl, merge) {
+    if (merge === void 0) { merge = true; }
     // 获取第一个文本标签
     var firstText = rowEl.children[0];
     if (!firstText || firstText.className !== const_1.TEXT_TAG_CLASS) {
@@ -100,7 +103,8 @@ function moveRangeAtRowStart(range, rowEl) {
     // 设置光标位置
     var textNode = firstText.firstChild;
     range.setStart(textNode ? textNode : firstText, 0);
-    range.collapse(true);
+    if (merge)
+        range.collapse(true);
 }
 /**
  * 修正光标位置,并获取当前光标所在的编辑器/行/文本
@@ -143,25 +147,32 @@ function rangeEls(range, which) {
     }
     if (!editorEl)
         return null;
-    if (!rowEl) {
+    if (!rowEl || rowEl.className !== const_1.ROW_TAG_CLASS) {
+        // 如果不在行内，则将当前光标所在的内容全部转移到新的一行
+        var textContent = rangeEl.textContent;
+        rangeEl.remove();
         var index_1 = rangeIndex > editorEl.childNodes.length - 1 ? editorEl.childNodes.length - 1 : rangeIndex;
         rowEl = editorEl.childNodes[index_1];
         if (!rowEl || rowEl.className !== const_1.ROW_TAG_CLASS) {
-            textEl = (0, _1.createTextTag)(const_1.NEW_LINE);
+            textEl = (0, _1.createTextTag)(textContent ? textContent : const_1.NEW_LINE);
             rowEl = (0, _1.createElement)("p", { className: const_1.ROW_TAG_CLASS });
+            rowEl.appendChild(textEl);
             editorEl.appendChild(rowEl);
         }
         if (!textEl) {
             textEl = rowEl.children[rowEl.children.length - 1];
             if (textEl.className !== const_1.TEXT_TAG_CLASS) {
-                textEl = (0, _1.createTextTag)(const_1.NEW_LINE);
+                textEl = (0, _1.createTextTag)(textContent ? textContent : const_1.NEW_LINE);
                 rowEl.appendChild(textEl);
             }
         }
         rangeIndex = which === "start" ? 0 : rowEl.childNodes.length;
     }
-    if (!textEl) {
-        textEl = (0, _1.createTextTag)(rowEl.children.length > 0 ? const_1.PLACEHOLDER_TEXT : const_1.NEW_LINE);
+    if (!textEl || textEl.nodeName === "#text") {
+        // 如果不在行内，则将当前光标所在的内容全部转移到新的一行
+        var textContent = rangeEl.textContent;
+        rangeEl.remove();
+        textEl = (0, _1.createTextTag)(textContent ? textContent : rowEl.children.length > 0 ? const_1.PLACEHOLDER_TEXT : const_1.NEW_LINE);
         rowEl.appendChild(textEl);
         rangeIndex = which === "start" ? 0 : rowEl.childNodes.length;
     }
@@ -380,96 +391,105 @@ function fixTextContent(range, els) {
  * 删除选中区域内的所有元素
  */
 function removeRangeContent(range, _a) {
-    var _b, _c;
-    var _d = _a === void 0 ? {} : _a, startEls = _d.startEls, endEls = _d.endEls, mergeRow = _d.mergeRow;
-    var sEls = startEls ? startEls : rangeEls(range);
-    var eEls = endEls ? endEls : rangeEls(range);
+    var _b, _c, _d, _e;
+    var _f = _a === void 0 ? {} : _a, startEls = _f.startEls, endEls = _f.endEls, mergeRow = _f.mergeRow;
+    if (range.collapsed)
+        return ""; // 没有选中内容
+    var sEls = startEls ? startEls : rangeEls(range, "start");
+    var eEls = endEls ? endEls : rangeEls(range, "end");
     if (!sEls || !eEls)
-        return;
+        return "";
     // 不在同一个编辑器内
     if (sEls.editorEl !== eEls.editorEl)
-        return;
+        return "";
     // 如果是同一个文本标签
     if (sEls.textEl === eEls.textEl) {
         // 是标准文本标签
         if (sEls.textEl.className === const_1.TEXT_TAG_CLASS) {
             var rangeEl = range.startContainer;
             var rangeIndex = range.startOffset;
+            // 获取选中内容
+            var content_1 = range.extractContents().textContent || "";
             // 删除选中内容
             range.deleteContents();
             range.setStart(rangeEl, rangeIndex);
             range.collapse(true);
-            return;
+            return content_1;
         }
+        var content = sEls.textEl.textContent || "";
         // 删除标签
         sEls.textEl.remove();
-        return;
+        return content;
     }
-    var setMergeRow = function (startRow, endRow, _mergeRow) {
-        if (!_mergeRow)
-            return;
+    var startContent = ""; // 前面删除的内容
+    // 获取开始标签下标
+    var sIndex = Array.from(sEls.rowEl.children).indexOf(sEls.textEl);
+    // 如果开始标签是标准文本标签
+    if (sEls.textEl.className === const_1.TEXT_TAG_CLASS) {
+        startContent += ((_b = sEls.textEl.textContent) === null || _b === void 0 ? void 0 : _b.slice(range.startOffset)) || "";
+        // 保留光标之前的内容
+        var context = (_c = sEls.textEl.textContent) === null || _c === void 0 ? void 0 : _c.slice(0, range.startOffset);
+        context = (0, _1.formatString)(context);
+        if (context) {
+            sIndex += 1; // 如果还有内容，要删除的开始标签往后移一位
+            sEls.textEl.textContent = context;
+            var textNode = sEls.textEl.lastChild;
+            range.setStart(textNode ? textNode : sEls.textEl, textNode ? context.length : sEls.textEl.childNodes.length);
+        }
+    }
+    // 获取结束标签下标
+    var eIndex = Array.from(eEls.rowEl.children).indexOf(eEls.textEl);
+    // 如果结束标签是标准文本标签
+    var endContent = ""; // 后面的内容
+    if (eEls.textEl.className === const_1.TEXT_TAG_CLASS) {
+        endContent += ((_d = eEls.textEl.textContent) === null || _d === void 0 ? void 0 : _d.slice(0, range.endOffset)) || "";
+        // 保留光标之后的内容
+        var context = (_e = eEls.textEl.textContent) === null || _e === void 0 ? void 0 : _e.slice(range.endOffset);
+        context = (0, _1.formatString)(context);
+        if (context) {
+            eIndex -= 1; // 如果还有内容，要删除的结束标签往前移一位
+            eEls.textEl.textContent = context;
+            range.setEnd(eEls.textEl, 0);
+        }
+    }
+    // 如果是同一行
+    if (sEls.rowEl === eEls.rowEl) {
+        // 删除包括开始和结束的所有内容
+        for (var i = eIndex; i >= sIndex; i--) {
+            endContent = (sEls.rowEl.children[i].textContent || "") + endContent;
+            sEls.rowEl.children[i].remove();
+        }
+        range.collapse(true);
+        return startContent + endContent;
+    }
+    // 删除开始行和结束行之间的所有行
+    var swIndex = Array.from(sEls.editorEl.children).indexOf(sEls.rowEl);
+    var ewIndex = Array.from(eEls.editorEl.children).indexOf(eEls.rowEl);
+    var centerContent = ""; // 中间的内容
+    for (var i = ewIndex - 1; i > swIndex; i--) {
+        centerContent = (sEls.editorEl.children[i].textContent || "") + centerContent;
+        sEls.editorEl.children[i].remove();
+    }
+    // 从开始文本标签开始删除开始行的所有内容
+    for (var i = sEls.rowEl.children.length - 1; i >= sIndex; i--) {
+        centerContent = (sEls.rowEl.children[i].textContent || "") + centerContent;
+        sEls.rowEl.children[i].remove();
+    }
+    // 删除结束行的从头到结束标签之前的内容
+    for (var i = eIndex; i >= 0; i--) {
+        endContent = (eEls.rowEl.children[i].textContent || "") + endContent;
+        eEls.rowEl.children[i].remove();
+    }
+    if (mergeRow) {
         // 将光标移动到开始标签的末尾
         moveRangeAtRowEnd(range, sEls.rowEl);
         // 将结束行的所有内容添加到开始行的末尾
         (0, _1.transferElement)(eEls.rowEl, sEls.rowEl);
         // 删除结束标签
         eEls.rowEl.remove();
-    };
-    // 如果不是同一个文本标签
-    // 都是标准文本标签的情况下使用默认删除
-    if (sEls.textEl.className === const_1.TEXT_TAG_CLASS && eEls.textEl.className === const_1.TEXT_TAG_CLASS) {
-        // 删除选中内容
-        range.deleteContents();
-        setMergeRow(sEls.rowEl, eEls.rowEl, mergeRow);
-        return;
     }
-    // 获取开始标签下标
-    var sIndex = Array.from(sEls.rowEl.children).indexOf(sEls.textEl);
-    // 如果开始标签是标准文本标签
-    if (sEls.textEl.className === const_1.TEXT_TAG_CLASS) {
-        // 删除开始光标之后的内容
-        var context = (_b = sEls.textEl.textContent) === null || _b === void 0 ? void 0 : _b.slice(range.startOffset);
-        context = (0, _1.formatString)(context);
-        if (context) {
-            sEls.textEl.textContent = context;
-            sIndex += 1; // 如果还有内容，开始标签往后移一位
-        }
-    }
-    // 获取结束标签下标
-    var eIndex = Array.from(eEls.rowEl.children).indexOf(eEls.textEl);
-    // 如果结束标签是标准文本标签
-    if (eEls.textEl.className === const_1.TEXT_TAG_CLASS) {
-        // 删除结束光标之前的内容
-        var context = (_c = eEls.textEl.textContent) === null || _c === void 0 ? void 0 : _c.slice(0, range.endOffset);
-        context = (0, _1.formatString)(context);
-        if (context) {
-            eEls.textEl.textContent = context;
-            eIndex -= 1; // 如果还有内容，结束标签往前移一位
-        }
-    }
-    // 如果是同一行
-    if (sEls.rowEl === eEls.rowEl) {
-        // 删除开始标签和结束标签之间的所有标签（包括开始和结束标签）
-        for (var i = eIndex; i >= sIndex; i++) {
-            sEls.rowEl.children[i].remove();
-        }
-        return;
-    }
-    // 删除开始行和结束行之间的所有行
-    var swIndex = Array.from(sEls.editorEl.children).indexOf(sEls.rowEl);
-    var ewIndex = Array.from(eEls.editorEl.children).indexOf(eEls.rowEl);
-    for (var i = ewIndex; i > swIndex; i--) {
-        sEls.editorEl.children[i].remove();
-    }
-    // 从开始文本标签开始删除开始行的所有内容
-    for (var i = sEls.rowEl.children.length - 1; i >= sIndex; i--) {
-        sEls.rowEl.children[i].remove();
-    }
-    // 删除结束行的从头到结束标签之前的内容
-    for (var i = eIndex; i >= 0; i--) {
-        eEls.rowEl.children[i].remove();
-    }
-    return;
+    range.collapse(true);
+    return startContent + centerContent + endContent;
 }
 /**
  * 在光标位置插入文本

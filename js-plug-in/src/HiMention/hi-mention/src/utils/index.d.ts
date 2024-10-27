@@ -3,7 +3,7 @@ export declare function createElement<K extends keyof HTMLElementTagNameMap>(typ
     style?: {
         [key: string]: string;
     };
-    content?: string | HTMLElement;
+    content?: string | HTMLElement | Text | Node | Element;
 }): HTMLElementTagNameMap[K];
 /**
  * 判断一个标签是否为空标签
@@ -12,7 +12,7 @@ export declare function isEmptyElement(el: HTMLElement | Node): boolean;
 /**
  * 创建一个文本标签
  */
-export declare function createTextTag(content?: string): HTMLElement;
+export declare function createTextTag(content?: string | Text): HTMLElement;
 /**
  * 创建一个行标签
  */
